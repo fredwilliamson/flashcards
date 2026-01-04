@@ -1,5 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 import {useEffect} from 'react';
+import {useTranslation} from 'react-i18next';
 import {
   type CardDifficulty,
   getAllSessions,
@@ -31,6 +32,7 @@ export const adminKeys = {
  */
 export const useGlobalStats = () => {
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const {
     data,
@@ -47,7 +49,7 @@ export const useGlobalStats = () => {
         console.error('Failed to load global stats:', error);
         showToast(t('errors.loadGlobalStats'), 'error');
       }
-  }, [error, showToast]);
+  }, [error, showToast, t]);
 
   return {
     stats: data,
@@ -62,6 +64,7 @@ export const useGlobalStats = () => {
  */
 export const useUserStats = (userId: number | null) => {
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const {
     data,
@@ -78,7 +81,7 @@ export const useUserStats = (userId: number | null) => {
         console.error(`Failed to load stats for user #${userId}:`, error);
         showToast(t('errors.loadUserStats'), 'error');
       }
-  }, [error, userId, showToast]);
+  }, [error, userId, showToast, t]);
 
   return {
     stats: data,
@@ -92,6 +95,7 @@ export const useUserStats = (userId: number | null) => {
  */
 export const useSessions = (limit: number = 10) => {
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const {
     data = [],
@@ -108,7 +112,7 @@ export const useSessions = (limit: number = 10) => {
         console.error('Failed to load sessions:', error);
         showToast(t('errors.loadSessions'), 'error');
       }
-  }, [error, showToast]);
+  }, [error, showToast, t]);
 
   return {
     sessions: data,
@@ -124,6 +128,7 @@ export const useSessions = (limit: number = 10) => {
  */
 export const useDifficultCards = (limit: number = 10) => {
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const {
     data = [],
@@ -140,7 +145,7 @@ export const useDifficultCards = (limit: number = 10) => {
         console.error('Failed to load difficult cards:', error);
         showToast(t('errors.loadDifficultCards'), 'error');
       }
-  }, [error, showToast]);
+  }, [error, showToast, t]);
 
   return {
     cards: data,

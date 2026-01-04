@@ -25,7 +25,6 @@ export default function DecksManagement() {
 
   // Use paginated search hook
   const {
-    searchQuery,
     setSearchQuery,
     currentPage,
     setCurrentPage,
