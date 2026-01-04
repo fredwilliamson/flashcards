@@ -45,9 +45,9 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Alembic (if running migrations separately)
-alembic.ini
-alembic/versions/*.py
+# Alembic - KEEP these for auto migrations
+# alembic.ini
+# alembic/versions/*.py
 
 # Environment files (use docker-compose env instead)
 .env
