@@ -1,4 +1,5 @@
 # 🗄️ Supabase Database Setup
+
 ## Why Supabase?
 
 ✅ **PostgreSQL managé** - Pas besoin de gérer l'infrastructure  
