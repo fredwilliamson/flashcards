@@ -1,0 +1,23 @@
+question,answer,keywords
+"Quelle est la capitale de la France?","Paris","géographie,europe,capitale"
+"Combien font 2 + 2?","4","mathématiques,arithmétique,addition"
+"Qui a écrit Roméo et Juliette?","William Shakespeare","littérature,anglais,dramaturge"
+"Quel est le symbole chimique de l'eau?","H2O","chimie,science,molécule"
+"En quelle année s'est terminée la Seconde Guerre mondiale?","1945","histoire,guerre,dates"
+"Quelle est la plus grande planète de notre système solaire?","Jupiter","astronomie,science,planètes"
+"Quelle est la vitesse de la lumière?","299 792 458 m/s","physique,science,constante"
+"Qui a peint la Joconde?","Léonard de Vinci","art,renaissance,peinture"
+"Quelle est la centrale énergétique de la cellule?","Les mitochondries","biologie,science,cellule"
+"Quelle est la capitale du Japon?","Tokyo","géographie,asie,capitale"
+"Quel langage de programmation est connu pour le développement web?","JavaScript","programmation,web,codage"
+"Que signifie CPU?","Central Processing Unit (Unité centrale de traitement)","ordinateur,matériel,acronyme"
+"Quel est le point d'ébullition de l'eau au niveau de la mer?","100°C","chimie,science,température"
+"Qui a développé la théorie de la relativité?","Albert Einstein","physique,science,théorie"
+"Quel est le plus grand océan de la Terre?","Océan Pacifique","géographie,nature,eau"
+"Qu'est-ce que React?","Une bibliothèque JavaScript pour construire des interfaces utilisateur","programmation,javascript,frontend"
+"Quel est le langage de programmation créé par Guido van Rossum?","Python","programmation,langage,python"
+"Combien de côtés a un hexagone?","6","mathématiques,géométrie,polygone"
+"Quelle est la formule de l'aire d'un cercle?","π × r²","mathématiques,géométrie,formule"
+"Quel est le framework backend Python populaire?","FastAPI ou Django","programmation,python,backend"
+
+

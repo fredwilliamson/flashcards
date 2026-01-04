@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manual API Test</title>
+</head>
+<body>
+    <h1>FlashCard API Manual Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:8787';
+        const results = document.getElementById('results');
+        
+        function log(message, color = 'black') {
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        async function test() {
+            log('=== Starting Manual API Test ===', 'blue');
+            
+            // Step 1: Login
+            log('\n1. Testing login...', 'blue');
+            try {
+                const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+                
+                if (!loginRes.ok) {
+                    log(`❌ Login failed: ${loginRes.status}`, 'red');
+                    const error = await loginRes.text();
+                    log(`Error: ${error}`, 'red');
+                    return;
+                }
+                
+                const loginData = await loginRes.json();
+                const token = loginData.access_token;
+                log(`✅ Login successful`, 'green');
+                log(`Token: ${token.substring(0, 50)}...`, 'gray');
+                
+                // Step 2: Test /auth/me
+                log('\n2. Testing /auth/me...', 'blue');
+                const meRes = await fetch(`${API_URL}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (meRes.ok) {
+                    const meData = await meRes.json();
+                    log(`✅ /auth/me successful: ${meData.username} (admin: ${meData.is_admin})`, 'green');
+                } else {
+                    log(`❌ /auth/me failed: ${meRes.status}`, 'red');
+                    const error = await meRes.text();
+                    log(`Error: ${error}`, 'red');
+                }
+                
+                // Step 3: Test /api/decks
+                log('\n3. Testing /api/decks...', 'blue');
+                const decksRes = await fetch(`${API_URL}/api/decks`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (decksRes.ok) {
+                    const decksData = await decksRes.json();
+                    log(`✅ /api/decks successful: ${decksData.length} decks`, 'green');
+                    log(JSON.stringify(decksData, null, 2), 'gray');
+                } else {
+                    log(`❌ /api/decks failed: ${decksRes.status}`, 'red');
+                    const error = await decksRes.text();
+                    log(`Error: ${error}`, 'red');
+                }
+                
+                // Step 4: Test /api/admin/users
+                log('\n4. Testing /api/admin/users...', 'blue');
+                const usersRes = await fetch(`${API_URL}/api/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (usersRes.ok) {
+                    const usersData = await usersRes.json();
+                    log(`✅ /api/admin/users successful: ${usersData.length} users`, 'green');
+                } else {
+                    log(`❌ /api/admin/users failed: ${usersRes.status}`, 'red');
+                    const error = await usersRes.text();
+                    log(`Error: ${error}`, 'red');
+                }
+                
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, 'red');
+            }
+            
+            log('\n=== Test Complete ===', 'blue');
+        }
+        
+        // Run test on page load
+        test();
+    </script>
+</body>
+</html>
+
+
+
