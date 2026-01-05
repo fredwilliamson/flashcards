@@ -1,10 +1,20 @@
 from logging.config import fileConfig
+import socket
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from sqlalchemy import text
 
 from alembic import context
+
+# Force IPv4 to avoid IPv6 issues on some hosting platforms
+_original_getaddrinfo = socket.getaddrinfo
+
+def _getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+    """Force IPv4 resolution only"""
+    return _original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+socket.getaddrinfo = _getaddrinfo_ipv4_only
 
 # Import your models
 from app.database import Base
@@ -43,8 +53,17 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    configuration = config.get_section(config.config_ini_section, {})
+    configuration["sqlalchemy.connect_args"] = {
+        "connect_timeout": 10,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    }
+    
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
