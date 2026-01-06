@@ -1,5 +1,4 @@
 from logging.config import fileConfig
-import socket
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -13,21 +12,6 @@ from app.models import base_entity, user, deck, card, progress
 from app.config import get_settings
 
 settings = get_settings()
-
-# Optional: Force IPv4 to avoid IPv6 issues on some hosting platforms
-# Set FORCE_IPV4=true in .env to enable (useful for Render, Railway)
-# Leave as false for Supabase (which works better with dual stack)
-if settings.FORCE_IPV4:
-    print("⚠️ [Alembic] Forcing IPv4 connections (FORCE_IPV4=true)")
-    _original_getaddrinfo = socket.getaddrinfo
-    
-    def _getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
-        """Force IPv4 resolution only"""
-        return _original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-    
-    socket.getaddrinfo = _getaddrinfo_ipv4_only
-else:
-    print("✅ [Alembic] Using dual stack IPv4/IPv6 (recommended for Supabase)")
 
 # this is the Alembic Config object
 config = context.config

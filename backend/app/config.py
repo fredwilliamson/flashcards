@@ -10,9 +10,6 @@ class Settings(BaseSettings):
     # Database (Supabase PostgreSQL)
     DATABASE_URL: str
     
-    # Network
-    FORCE_IPV4: bool = False  # Force IPv4 connections (for platforms with IPv6 issues)
-    
     # JWT
     SECRET_KEY: str
     ALGORITHM: str = "HS256"

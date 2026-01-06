@@ -58,11 +58,13 @@ app.add_middleware(
 
 
 @app.get("/")
+@app.head("/")
 def read_root():
     return {"message": "FlashCard API", "status": "running"}
 
 
 @app.get("/health")
+@app.head("/health")
 def health_check():
     return {"status": "healthy"}
 

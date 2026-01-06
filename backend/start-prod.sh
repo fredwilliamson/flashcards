@@ -7,7 +7,7 @@ echo ""
 echo "📦 Applying database migrations..."
 
 MAX_RETRIES=5
-RETRY_DELAY=5
+RETRY_DELAY=10  # Increased to 10s for DB wake-up
 
 for i in $(seq 1 $MAX_RETRIES); do
     echo "Attempt $i/$MAX_RETRIES..."
