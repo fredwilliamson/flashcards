@@ -7,8 +7,8 @@ class CSVParser:
     """Parser for CSV files"""
     
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-    REQUIRED_COLUMNS = {'question', 'answer', 'keywords'}
-    OPTIONAL_COLUMNS = {'hint'}
+    REQUIRED_COLUMNS = {'question', 'answer'}
+    OPTIONAL_COLUMNS = {'keywords', 'hint'}
     
     def __init__(self, content: bytes):
         """
@@ -79,6 +79,7 @@ class CSVParser:
             raise ValueError("Keywords list is empty after parsing")
         
         return keywords
+
 
 
 

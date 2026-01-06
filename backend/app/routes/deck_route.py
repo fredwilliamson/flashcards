@@ -53,6 +53,49 @@ def delete_deck(deck_id: int, service: DeckServiceImpl = Depends(get_deck_servic
     return None
 
 
+@router.get("/{deck_id}/cards", response_model=list)
+def get_deck_cards(
+    deck_id: int,
+    deck_service: DeckServiceImpl = Depends(get_deck_service),
+    card_service: CardServiceImpl = Depends(get_card_service)
+):
+    """Get all cards for a specific deck"""
+    # Verify deck exists
+    deck = deck_service.get_by_id(deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+    return card_service.get_by_deck_id(deck_id)
+
+
+@router.delete("/{deck_id}/cards", status_code=204)
+def delete_all_deck_cards(
+    deck_id: int,
+    deck_service: DeckServiceImpl = Depends(get_deck_service),
+    card_service: CardServiceImpl = Depends(get_card_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Delete all cards in a deck (admin or deck creator only)"""
+    # Check deck exists
+    deck = deck_service.get_by_id(deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+    
+    # Check permissions (creator or admin)
+    if deck.creator_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to delete cards from this deck"
+        )
+    
+    # Get all cards and delete them
+    cards = card_service.get_by_deck_id(deck_id)
+    card_ids = [card.id for card in cards]
+    if card_ids:
+        card_service.delete_all(card_ids)
+    
+    return None
+
+
 @router.post("/{deck_id}/import-csv", response_model=CSVImportResponse)
 async def import_cards_csv(
     deck_id: int,

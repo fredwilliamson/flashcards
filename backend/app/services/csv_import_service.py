@@ -46,9 +46,12 @@ class CSVImportService:
         
         for idx, row in enumerate(rows, start=2):  # Line 2 = first data row (header is line 1)
             try:
-                # Parse keywords
+                # Parse keywords (optional)
                 keywords_str = row.get('keywords', '')
-                keywords = parser.parse_keywords(keywords_str)
+                if keywords_str and keywords_str.strip():
+                    keywords = parser.parse_keywords(keywords_str)
+                else:
+                    keywords = []  # Empty keywords list if not provided
                 
                 # Validate and transform (business)
                 card_create = self.validator.validate(row, keywords)

@@ -42,9 +42,6 @@ class CardValidator:
         if not answer:
             raise ValueError("Answer cannot be empty")
         
-        if not keywords:
-            raise ValueError("Keywords list cannot be empty")
-        
         # Create and validate DTO (Pydantic validation)
         card_create = CardCreate(
             deck_id=self.deck_id,
@@ -55,6 +52,7 @@ class CardValidator:
         )
         
         return card_create
+
 
 
 

@@ -66,3 +66,6 @@ temp/
 .vercel
 .netlify
 fly.toml.backup
+
+# Personal flashcards
+terminologie_medicale.csv

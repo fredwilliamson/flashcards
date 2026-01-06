@@ -10,7 +10,8 @@ import {
     getCardsByDeck,
     createCard,
     patchCard, 
-    deleteCard, 
+    deleteCard,
+    deleteAllDeckCards,
     importCardCSV
 } from '../../services/api';
 import {useToast} from '../../contexts/ToastContext';
@@ -195,6 +196,29 @@ export const useDeleteCard = () => {
         },
         onError: (error) => {
             console.error('Failed to delete card:', error);
+            // Toast is already handled by Axios interceptor
+        },
+    });
+};
+
+/**
+ * Hook to delete all cards in a deck
+ */
+export const useDeleteAllDeckCards = () => {
+    const queryClient = useQueryClient();
+    const {showToast} = useToast();
+
+    return useMutation<void, AxiosError, number>({
+        mutationFn: async (deckId) => {
+            await deleteAllDeckCards(deckId);
+        },
+        onSuccess: (_, deckId) => {
+            queryClient.invalidateQueries({queryKey: cardKeys.lists()});
+            queryClient.invalidateQueries({queryKey: cardKeys.byDeck(deckId)});
+            showToast(t('success.allCardsDeleted'), 'success');
+        },
+        onError: (error) => {
+            console.error('Failed to delete all cards:', error);
             // Toast is already handled by Axios interceptor
         },
     });

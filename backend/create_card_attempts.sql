@@ -22,3 +22,4 @@ CREATE INDEX IF NOT EXISTS ix_flashcard_card_attempts_session_id ON flashcard.ca
 CREATE INDEX IF NOT EXISTS ix_flashcard_card_attempts_card_id ON flashcard.card_attempts(card_id);
 CREATE INDEX IF NOT EXISTS ix_flashcard_card_attempts_user_id ON flashcard.card_attempts(user_id);
 
+

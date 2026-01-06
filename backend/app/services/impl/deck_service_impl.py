@@ -23,3 +23,4 @@ class DeckServiceImpl(BaseServiceImpl[Deck, DeckCreate, DeckReplace, DeckPatch, 
         """Get all public decks"""
         decks = self.repository.find_public_decks()
         return [self._to_response(deck) for deck in decks]
+

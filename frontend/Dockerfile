@@ -40,3 +40,4 @@ RUN echo '<!DOCTYPE html><html><body>OK</body></html>' > /usr/share/nginx/html/h
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
 
+

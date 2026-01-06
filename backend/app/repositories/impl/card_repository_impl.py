@@ -17,3 +17,4 @@ class CardRepositoryImpl(BaseRepositoryImpl[Card], CardRepository):
 
 
 
+

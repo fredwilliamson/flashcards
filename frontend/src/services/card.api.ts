@@ -12,7 +12,7 @@ export const getCardById = async (id: number): Promise<Card> => {
 }
 
 export const getCardsByDeck = async (deckId: number): Promise<Card[]> => {
-  const res = await api.get<Card[]>(`/cards?deck_id=${deckId}`)
+  const res = await api.get<Card[]>(`/decks/${deckId}/cards`)
   return res.data
 }
 
@@ -28,6 +28,11 @@ export const patchCard = async (id: number, data: CardPatch): Promise<Card> => {
 
 export const deleteCard = async (id: number): Promise<void> => {
   const res = await api.delete(`/cards/${id}`)
+  return res.data
+}
+
+export const deleteAllDeckCards = async (deckId: number): Promise<void> => {
+  const res = await api.delete(`/decks/${deckId}/cards`)
   return res.data
 }
 

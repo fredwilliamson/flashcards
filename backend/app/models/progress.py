@@ -9,7 +9,7 @@ class UserProgress(BaseEntity):
     
     user_id = Column(BigInteger, ForeignKey("flashcard.users.id"), nullable=False)
     deck_id = Column(BigInteger, ForeignKey("flashcard.decks.id"), nullable=False)
-    card_id = Column(BigInteger, ForeignKey("flashcard.cards.id"), nullable=False)
+    card_id = Column(BigInteger, ForeignKey("flashcard.cards.id", ondelete='CASCADE'), nullable=False)
     correct = Column(Boolean, nullable=False)
     answered_at = Column(DateTime(timezone=True), server_default=func.now())
     

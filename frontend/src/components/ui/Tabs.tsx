@@ -45,3 +45,4 @@ export default function Tabs({ tabs, activeTab, onChange }: TabsProps) {
 }
 
 
+

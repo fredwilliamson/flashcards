@@ -1,7 +1,7 @@
 import {useMemo, useState} from 'react'
 import {useNavigate, useParams} from 'react-router-dom'
 import {useTranslation} from 'react-i18next'
-import {ArrowLeft, Plus, Upload} from 'lucide-react'
+import {ArrowLeft, Plus, Upload, Trash2} from 'lucide-react'
 import LogoutButton from '../../components/LogoutButton'
 import Loader from '../../components/Loader'
 import FlashCard from '../../components/FlashCard'
@@ -13,7 +13,7 @@ import {Badge} from '../../components/ui/Badge'
 import CreateCardModal from '../../components/admin/CreateCardModal'
 import EditCardModal from '../../components/admin/EditCardModal'
 import ImportCSVModal from '../../components/admin/ImportCSVModal'
-import {useCardsByDeck, useDeck, useDeleteCard} from '../../hooks/query'
+import {useCardsByDeck, useDeck, useDeleteCard, useDeleteAllDeckCards} from '../../hooks/query'
 import {useAuth} from '../../contexts/AuthContext'
 import type {Card as CardType} from '../../types'
 
@@ -30,6 +30,7 @@ export default function DeckCardsPage() {
   const { deck, isLoading: deckLoading } = useDeck(deckId ? parseInt(deckId) : null)
   const { cards, isLoading: cardsLoading } = useCardsByDeck(deckId ? parseInt(deckId) : null)
   const { mutate: deleteCard } = useDeleteCard()
+  const { mutate: deleteAllCards } = useDeleteAllDeckCards()
 
   // Sort cards by ID to maintain consistent order
   const sortedCards = useMemo(() => {
@@ -56,6 +57,16 @@ export default function DeckCardsPage() {
   const handleDeleteCard = (cardId: number) => {
     if (confirm(t('admin.confirmDeleteCard'))) {
       deleteCard({ id: cardId, deckId: parseInt(deckId!) })
+    }
+  }
+
+  const handleDeleteAllCards = () => {
+    if (sortedCards.length === 0) {
+      return
+    }
+    const confirmMessage = t('admin.confirmDeleteAllCards', { count: sortedCards.length, deckName: deck?.name })
+    if (confirm(confirmMessage)) {
+      deleteAllCards(parseInt(deckId!))
     }
   }
 
@@ -120,6 +131,16 @@ export default function DeckCardsPage() {
               <Upload className="h-4 w-4 mr-1" />
               {t('admin.importCSV')}
             </Button>
+            {sortedCards.length > 0 && (
+              <Button 
+                variant="secondary" 
+                onClick={handleDeleteAllCards}
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                {t('admin.deleteAllCards')}
+              </Button>
+            )}
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4 mr-1" />
               {t('admin.newCard')}
