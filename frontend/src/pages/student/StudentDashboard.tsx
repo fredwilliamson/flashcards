@@ -1,7 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, TrendingUp, GraduationCap } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
 import UserMenu from '../../components/UserMenu'
 import { Badge } from '../../components/ui/Badge'
 import Tabs from '../../components/ui/Tabs'
@@ -10,7 +9,6 @@ import MyProgressManagement from '../../components/student/MyProgressManagement'
 
 export default function StudentDashboard() {
   const { t } = useTranslation()
-  const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const activeTab = searchParams.get('tab') || 'decks'

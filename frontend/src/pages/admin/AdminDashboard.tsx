@@ -1,7 +1,6 @@
 import {useSearchParams} from 'react-router-dom'
 import {useTranslation} from 'react-i18next'
 import {BarChart3, BookOpen, Users as UsersIcon} from 'lucide-react'
-import {useAuth} from '../../contexts/AuthContext'
 import UserMenu from '../../components/UserMenu'
 import {Badge} from '../../components/ui/Badge'
 import Tabs from '../../components/ui/Tabs'
@@ -10,7 +9,6 @@ import DecksManagement from '../../components/admin/DecksManagement'
 
 export default function AdminDashboard() {
   const { t } = useTranslation()
-  const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const activeTab = searchParams.get('tab') || 'users'
