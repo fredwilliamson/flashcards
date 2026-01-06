@@ -29,6 +29,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @app.on_event("startup")
 def startup_event():
     """Run migrations on startup"""
+    # Skip migrations if already run by start script (production)
+    import os
+    skip_startup_migrations = os.getenv('SKIP_STARTUP_MIGRATIONS', 'false').lower() == 'true'
+    
+    if skip_startup_migrations:
+        print("⏭️ Skipping startup migrations (already run by start script)")
+        return
+        
     print("🚀 Running database migrations...")
     try:
         run_migrations()
