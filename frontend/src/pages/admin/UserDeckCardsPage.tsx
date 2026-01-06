@@ -18,7 +18,7 @@ export default function UserDeckCardsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(20)
+  const [itemsPerPage, setItemsPerPage] = useState(50)
 
   const { data, isLoading } = useUserDeckCards(parseInt(userId!), parseInt(deckId!))
 
@@ -67,6 +67,8 @@ export default function UserDeckCardsPage() {
     {
       key: 'question',
       header: t('admin.cardQuestion'),
+      sortable: true,
+      sortType: 'string',
       render: (card) => (
         <div className="font-medium text-gray-900 dark:text-white max-w-md truncate">
           {card.question}
@@ -76,11 +78,15 @@ export default function UserDeckCardsPage() {
     {
       key: 'status',
       header: t('admin.status'),
+      sortable: true,
+      sortType: 'string',
       render: (card) => <StatusBadge status={card.status} />,
     },
     {
       key: 'success_rate',
       header: t('admin.successRate'),
+      sortable: true,
+      sortType: 'number',
       render: (card) => (
         <div
           className={`text-sm font-medium ${
@@ -100,6 +106,8 @@ export default function UserDeckCardsPage() {
     {
       key: 'attempts',
       header: t('admin.attempts'),
+      sortable: true,
+      sortType: 'number',
       render: (card) => (
         <div className="text-sm text-gray-700 dark:text-gray-300">
           {card.attempts}
@@ -109,6 +117,8 @@ export default function UserDeckCardsPage() {
     {
       key: 'last_seen',
       header: t('admin.lastSeen'),
+      sortable: true,
+      sortType: 'date',
       render: (card) => {
         const timeAgo = formatTimeAgo(card.last_seen)
         const isStale = card.last_seen

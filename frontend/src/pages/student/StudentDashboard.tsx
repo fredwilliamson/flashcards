@@ -2,7 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, TrendingUp, GraduationCap } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import LogoutButton from '../../components/LogoutButton'
+import UserMenu from '../../components/UserMenu'
 import { Badge } from '../../components/ui/Badge'
 import Tabs from '../../components/ui/Tabs'
 import MyDecksManagement from '../../components/student/MyDecksManagement'
@@ -50,10 +50,7 @@ export default function StudentDashboard() {
             </div>
             <div className="flex items-center gap-3">
               <Badge variant="info">{t('student.student')}</Badge>
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {user?.first_name} {user?.last_name}
-              </span>
-              <LogoutButton />
+              <UserMenu />
             </div>
           </div>
         </div>

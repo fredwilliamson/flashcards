@@ -184,7 +184,9 @@
     "staleCards": "{{count}} cards not seen in > 7 days",
     "masteredCardsCount": "{{count}} cards fully mastered",
     "incorrectAttempts": "Incorrect Attempts",
-    "difficultyScore": "Difficulty Score"
+    "difficultyScore": "Difficulty Score",
+    "masteredCards": "Mastered Cards",
+    "nextReview": "Next Review"
   },
   "student": {
     "dashboard": "Student Dashboard",
@@ -224,7 +226,7 @@
     "expectedKeywords": "Expected keywords",
     "practice": "Practice Session",
     "exit": "Exit",
-    "confirmExit": "Are you sure you want to exit? Your progress will not be saved.",
+    "confirmExit": "Are you sure you want to exit this session?",
     "status": {
       "new": "New",
       "learning": "Learning",
@@ -290,6 +292,25 @@
     "darkMode": "Dark Mode",
     "lightMode": "Light Mode",
     "systemMode": "System"
+  },
+  "settings": {
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "currentPasswordPlaceholder": "Enter your current password",
+    "newPasswordPlaceholder": "Enter your new password",
+    "confirmPasswordPlaceholder": "Confirm your new password",
+    "passwordsMatch": "✓ Passwords match",
+    "passwordsDontMatch": "✗ Passwords don't match",
+    "allFieldsRequired": "All fields are required",
+    "passwordsMustMatch": "Passwords do not match",
+    "newPasswordMustBeDifferent": "New password must be different from current password",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "changePasswordError": "Error changing password",
+    "changingPassword": "Changing...",
+    "changePasswordButton": "Change Password",
+    "logoutAfterChange": "You will be logged out after changing your password"
   }
 }
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from ..schemas.user import UserResponse, UserPatch, UserReplace, UserCreate
+from ..schemas.user import UserResponse, UserPatch, UserReplace, UserCreate, ChangePasswordRequest, ChangePasswordResponse
 from ..services.impl import UserServiceImpl
 from ..dependencies import get_user_service
 from ..auth.dependencies import get_current_active_user
@@ -89,3 +89,19 @@ def delete_user(
     if not service.delete(user_id):
         raise HTTPException(status_code=404, detail="User not found")
     return None
+
+
+@router.patch("/me/password", response_model=ChangePasswordResponse)
+def change_my_password(
+    request: ChangePasswordRequest,
+    service: UserServiceImpl = Depends(get_user_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Change current user's password"""
+    try:
+        service.change_password(current_user.id, request)
+        return ChangePasswordResponse(message="Password changed successfully")
+    except ValueError as e:
+        if "incorrect" in str(e).lower():
+            raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))

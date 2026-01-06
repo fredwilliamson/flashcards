@@ -5,9 +5,12 @@ import {
     getAllUsers,
     getUserById,
     patchUser,
+    changePassword,
     type User,
     type UserCreate,
-    type UserPatch
+    type UserPatch,
+    type ChangePasswordRequest,
+    type ChangePasswordResponse
 } from '../../services/api';
 import {useToast} from '../../contexts/ToastContext';
 import {AxiosError} from 'axios';
@@ -154,6 +157,32 @@ export const useDeleteUser = () => {
         },
         onError: (error) => {
             console.error('Failed to delete user:', error);
+            // Toast is already handled by Axios interceptor
+        },
+    });
+};
+
+/**
+ * Hook to change current user's password
+ */
+export const useChangePassword = () => {
+    const {showToast} = useToast();
+
+    return useMutation<ChangePasswordResponse, AxiosError, ChangePasswordRequest>({
+        mutationFn: async (data) => {
+            return await changePassword(data);
+        },
+        onSuccess: () => {
+            showToast('Mot de passe changé avec succès. Veuillez vous reconnecter.', 'success');
+            // Logout after password change
+            setTimeout(() => {
+                localStorage.removeItem('token');
+                sessionStorage.removeItem('token');
+                window.location.href = '/login';
+            }, 2000);
+        },
+        onError: (error) => {
+            console.error('Failed to change password:', error);
             // Toast is already handled by Axios interceptor
         },
     });

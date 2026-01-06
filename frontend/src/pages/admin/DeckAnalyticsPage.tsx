@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Users as UsersIcon, TrendingUp, Target, AlertCircle, ChevronRight } from 'lucide-react'
@@ -14,8 +15,16 @@ export default function DeckAnalyticsPage() {
   const { deckId } = useParams<{ deckId: string }>()
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [difficultCardsOffset, setDifficultCardsOffset] = useState(0)
+  const difficultCardsLimit = 10
 
   const { data: deckAnalytics, isLoading } = useDeckAnalytics(parseInt(deckId!))
+
+  // Paginate difficult cards
+  const paginatedDifficultCards = useMemo(() => {
+    if (!deckAnalytics) return []
+    return deckAnalytics.difficult_cards.slice(difficultCardsOffset, difficultCardsOffset + difficultCardsLimit)
+  }, [deckAnalytics, difficultCardsOffset])
 
   if (isLoading || !deckAnalytics) {
     return <Loader text={t('admin.loadingDeckAnalytics')} />
@@ -41,6 +50,8 @@ export default function DeckAnalyticsPage() {
     {
       key: 'username',
       header: t('admin.username'),
+      sortable: true,
+      sortType: 'string',
       render: (user) => (
         <div className="font-medium text-gray-900 dark:text-white">
           {user.username}
@@ -50,6 +61,9 @@ export default function DeckAnalyticsPage() {
     {
       key: 'progress',
       header: t('admin.progress'),
+      sortable: true,
+      sortKey: 'progress_percentage',
+      sortType: 'number',
       render: (user) => (
         <div className="min-w-[200px]">
           <ProgressBar
@@ -71,6 +85,9 @@ export default function DeckAnalyticsPage() {
     {
       key: 'mastered',
       header: t('admin.mastered'),
+      sortable: true,
+      sortKey: 'mastered_cards',
+      sortType: 'number',
       render: (user) => (
         <div className="text-sm text-gray-700 dark:text-gray-300">
           {user.mastered_cards}/{user.total_cards}
@@ -80,6 +97,9 @@ export default function DeckAnalyticsPage() {
     {
       key: 'rate',
       header: t('admin.successRate'),
+      sortable: true,
+      sortKey: 'success_rate',
+      sortType: 'number',
       render: (user) => (
         <div
           className={`text-sm font-medium ${
@@ -97,6 +117,9 @@ export default function DeckAnalyticsPage() {
     {
       key: 'activity',
       header: t('admin.lastActivity'),
+      sortable: true,
+      sortKey: 'last_activity',
+      sortType: 'date',
       render: (user) => {
         const timeAgo = formatTimeAgo(user.last_activity)
         const isStale = user.last_activity
@@ -133,6 +156,8 @@ export default function DeckAnalyticsPage() {
     {
       key: 'question',
       header: t('admin.cardQuestion'),
+      sortable: true,
+      sortType: 'string',
       render: (card) => (
         <div className="font-medium text-gray-900 dark:text-white max-w-md truncate">
           {card.question}
@@ -142,6 +167,8 @@ export default function DeckAnalyticsPage() {
     {
       key: 'attempts',
       header: t('admin.totalAttempts'),
+      sortable: true,
+      sortType: 'number',
       render: (card) => (
         <div className="text-sm text-gray-700 dark:text-gray-300">
           {card.attempts}
@@ -151,6 +178,9 @@ export default function DeckAnalyticsPage() {
     {
       key: 'success',
       header: t('admin.successRate'),
+      sortable: true,
+      sortKey: 'success_rate',
+      sortType: 'number',
       render: (card) => (
         <div className="text-sm text-gray-700 dark:text-gray-300">
           {card.success_rate.toFixed(1)}%
@@ -160,6 +190,9 @@ export default function DeckAnalyticsPage() {
     {
       key: 'difficulty',
       header: t('admin.difficultyScore'),
+      sortable: true,
+      sortKey: 'success_rate', // Sort by success_rate (inverted visually)
+      sortType: 'number',
       render: (card) => {
         const difficulty = 100 - card.success_rate
         return (
@@ -257,9 +290,15 @@ export default function DeckAnalyticsPage() {
             </div>
             <DataTable
               columns={difficultyColumns}
-              data={deckAnalytics.difficult_cards}
+              data={paginatedDifficultCards}
               keyExtractor={(card) => card.card_id}
               emptyMessage={t('admin.noDifficultCards')}
+              pagination={{
+                total: deckAnalytics.difficult_cards.length,
+                limit: difficultCardsLimit,
+                offset: difficultCardsOffset,
+                onPageChange: setDifficultCardsOffset,
+              }}
             />
           </div>
         )}

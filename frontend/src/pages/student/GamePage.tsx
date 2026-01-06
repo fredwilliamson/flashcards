@@ -9,6 +9,7 @@ import {
   useCompleteSession,
 } from '@/hooks/query'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import Breadcrumb from '../../components/ui/Breadcrumb'
 import FeedbackCard from '../../components/game/FeedbackCard'
 import QuestionCard from '../../components/game/QuestionCard'
@@ -24,6 +25,7 @@ export default function GamePage() {
   const { t } = useTranslation()
 
   const [gameState, setGameState] = useState<GameState>('loading')
+  const [showExitDialog, setShowExitDialog] = useState(false)
   const [lastFeedback, setLastFeedback] = useState<{
     isCorrect: boolean
     message: string
@@ -92,9 +94,13 @@ export default function GamePage() {
   }
 
   const handleExit = () => {
-    if (window.confirm(t('game.confirmExit'))) {
-      navigate('/student/dashboard')
-    }
+    setShowExitDialog(true)
+  }
+
+  const handleConfirmExit = () => {
+    // Just navigate - progress is already saved with each answer
+    // No need to complete the session
+    navigate('/student/dashboard')
   }
 
   // Loading state
@@ -127,7 +133,14 @@ export default function GamePage() {
         <div className="flex items-center justify-between mb-6">
           <Breadcrumb
             items={[
-              { label: t('student.dashboard'), href: '/student/dashboard' },
+              { 
+                label: t('student.dashboard'), 
+                href: '/student/dashboard',
+                onClick: (e) => {
+                  e.preventDefault()
+                  handleExit()
+                }
+              },
               { label: t('game.practice') },
             ]}
           />
@@ -169,6 +182,18 @@ export default function GamePage() {
           )}
         </div>
       </main>
+
+      {/* Exit Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showExitDialog}
+        onClose={() => setShowExitDialog(false)}
+        onConfirm={handleConfirmExit}
+        title={t('game.exit')}
+        description={t('game.confirmExit')}
+        confirmText={t('common.yes')}
+        cancelText={t('common.no')}
+        variant="warning"
+      />
     </div>
   )
 }

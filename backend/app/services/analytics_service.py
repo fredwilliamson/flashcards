@@ -25,13 +25,15 @@ class AnalyticsService(ABC):
         pass
     
     @abstractmethod
-    def get_user_deck_cards(self, user_id: int, deck_id: int) -> Optional[UserDeckCardsResponse]:
+    def get_user_deck_cards(self, user_id: int, deck_id: int, limit: int = 50, offset: int = 0) -> Optional[UserDeckCardsResponse]:
         """
         Get user progress on individual cards within a deck.
         
         Args:
             user_id: ID of the user
             deck_id: ID of the deck
+            limit: Maximum number of cards to return (default: 50)
+            offset: Number of cards to skip (default: 0)
             
         Returns:
             UserDeckCardsResponse with card-level progress, or None if user/deck not found

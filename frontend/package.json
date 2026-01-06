@@ -12,6 +12,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
     "axios": "^1.6.7",
+    "check-password-strength": "^3.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "i18next": "^25.7.3",

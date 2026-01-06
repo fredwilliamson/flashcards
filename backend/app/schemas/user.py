@@ -38,3 +38,14 @@ class UserReplace(UserBase):
     password: str
     is_admin: bool = False
     is_active: bool = True
+
+
+class ChangePasswordRequest(BaseModel):
+    """Schema for changing password"""
+    current_password: str
+    new_password: str
+
+
+class ChangePasswordResponse(BaseModel):
+    """Response after password change"""
+    message: str

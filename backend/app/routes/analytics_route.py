@@ -34,6 +34,8 @@ def get_user_progress(
 def get_user_deck_cards(
     user_id: int,
     deck_id: int,
+    limit: int = 50,
+    offset: int = 0,
     current_user: User = Depends(get_current_active_user),
     service: AnalyticsServiceImpl = Depends(get_analytics_service),
 ):
@@ -42,7 +44,7 @@ def get_user_deck_cards(
     if not current_user.is_admin and current_user.id != user_id:
         raise HTTPException(status_code=403, detail="You can only access your own progress")
 
-    cards = service.get_user_deck_cards(user_id, deck_id)
+    cards = service.get_user_deck_cards(user_id, deck_id, limit, offset)
     if not cards:
         raise HTTPException(status_code=404, detail="User or deck not found")
 

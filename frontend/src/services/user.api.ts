@@ -26,3 +26,17 @@ export const deleteUser = async (id: number): Promise<void> => {
   return res.data
 }
 
+export interface ChangePasswordRequest {
+  current_password: string
+  new_password: string
+}
+
+export interface ChangePasswordResponse {
+  message: string
+}
+
+export const changePassword = async (data: ChangePasswordRequest): Promise<ChangePasswordResponse> => {
+  const res = await api.patch<ChangePasswordResponse>('/users/me/password', data)
+  return res.data
+}
+

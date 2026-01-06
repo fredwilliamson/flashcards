@@ -29,22 +29,29 @@ export const useUserProgress = (userId: number) => {
       return data
     },
     enabled: !!userId,
+    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0, // Consider data stale immediately
   })
 }
 
 /**
  * Get user progress on individual cards within a deck
  */
-export const useUserDeckCards = (userId: number, deckId: number) => {
+export const useUserDeckCards = (userId: number, deckId: number, limit: number = 50, offset: number = 0) => {
   return useQuery<UserDeckCardsResponse, AxiosError>({
-    queryKey: analyticsKeys.userDeckCards(userId, deckId),
+    queryKey: [...analyticsKeys.userDeckCards(userId, deckId), limit, offset],
     queryFn: async () => {
       const { data } = await api.get<UserDeckCardsResponse>(
-        `/analytics/users/${userId}/decks/${deckId}/cards`
+        `/analytics/users/${userId}/decks/${deckId}/cards`,
+        {
+          params: { limit, offset }
+        }
       )
       return data
     },
     enabled: !!userId && !!deckId,
+    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0, // Consider data stale immediately
   })
 }
 
@@ -59,5 +66,7 @@ export const useDeckAnalytics = (deckId: number) => {
       return data
     },
     enabled: !!deckId,
+    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0, // Consider data stale immediately
   })
 }

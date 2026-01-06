@@ -186,7 +186,9 @@
     "staleCards": "{{count}} cartes pas vues depuis > 7 jours",
     "masteredCardsCount": "{{count}} cartes complètement maîtrisées",
     "incorrectAttempts": "Tentatives incorrectes",
-    "difficultyScore": "Score de difficulté"
+    "difficultyScore": "Score de difficulté",
+    "masteredCards": "Cartes maîtrisées",
+    "nextReview": "Prochaine révision"
   },
   "student": {
     "dashboard": "Tableau de bord Étudiant",
@@ -226,7 +228,7 @@
     "expectedKeywords": "Mots-clés attendus",
     "practice": "Session de pratique",
     "exit": "Quitter",
-    "confirmExit": "Êtes-vous sûr de vouloir quitter ? Votre progression ne sera pas sauvegardée.",
+    "confirmExit": "Êtes-vous sûr de vouloir quitter cette session ?",
     "status": {
       "new": "Nouveau",
       "learning": "En apprentissage",
@@ -292,6 +294,25 @@
     "darkMode": "Mode Sombre",
     "lightMode": "Mode Clair",
     "systemMode": "Système"
+  },
+  "settings": {
+    "changePassword": "Changer le mot de passe",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "currentPasswordPlaceholder": "Entrez votre mot de passe actuel",
+    "newPasswordPlaceholder": "Entrez votre nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez votre nouveau mot de passe",
+    "passwordsMatch": "✓ Les mots de passe correspondent",
+    "passwordsDontMatch": "✗ Les mots de passe ne correspondent pas",
+    "allFieldsRequired": "Tous les champs sont requis",
+    "passwordsMustMatch": "Les mots de passe ne correspondent pas",
+    "newPasswordMustBeDifferent": "Le nouveau mot de passe doit être différent de l'ancien",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
+    "changePasswordError": "Erreur lors du changement de mot de passe",
+    "changingPassword": "Changement...",
+    "changePasswordButton": "Changer le mot de passe",
+    "logoutAfterChange": "Vous serez déconnecté après le changement de mot de passe"
   }
 }
 

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 export interface BreadcrumbItem {
   label: string
   href?: string
+  onClick?: (e: React.MouseEvent) => void
 }
 
 interface BreadcrumbProps {
@@ -23,12 +24,21 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
         <div key={index} className="flex items-center space-x-2">
           <ChevronRight className="w-4 h-4" />
           {item.href ? (
-            <Link
-              to={item.href}
-              className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-            >
-              {item.label}
-            </Link>
+            item.onClick ? (
+              <button
+                onClick={item.onClick}
+                className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                {item.label}
+              </button>
+            ) : (
+              <Link
+                to={item.href}
+                className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                {item.label}
+              </Link>
+            )
           ) : (
             <span className="text-gray-900 dark:text-gray-100 font-medium">
               {item.label}

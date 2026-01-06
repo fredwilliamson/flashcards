@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Play, BookOpen, Target, TrendingUp, Clock } from 'lucide-react'
@@ -42,14 +43,23 @@ export default function StudentDeckDetailPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { user } = useAuth()
+  const [offset, setOffset] = useState(0)
+  const limit = 50
 
   const deckIdNum = deckId ? parseInt(deckId) : 0
   const { deck, isLoading: loadingDeck } = useDeck(deckIdNum)
   const { data: deckCards, isLoading: loadingCards } = useUserDeckCards(
     user?.id || 0,
-    deckIdNum
+    deckIdNum,
+    limit,
+    offset
   )
   const startGameMutation = useStartSession()
+
+  const handlePageChange = (newOffset: number) => {
+    setOffset(newOffset)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handleStartPractice = () => {
     startGameMutation.mutate(
@@ -76,6 +86,8 @@ export default function StudentDeckDetailPage() {
     {
       key: 'question',
       header: t('admin.question'),
+      sortable: true,
+      sortType: 'string',
       render: (card) => (
         <div className="max-w-md">
           <div className="font-medium text-gray-900 dark:text-white">
@@ -87,6 +99,8 @@ export default function StudentDeckDetailPage() {
     {
       key: 'status',
       header: t('admin.status'),
+      sortable: true,
+      sortType: 'string',
       render: (card) => (
         <Badge variant={getStatusColor(card.status)}>
           {getStatusLabel(card.status, t)}
@@ -96,6 +110,8 @@ export default function StudentDeckDetailPage() {
     {
       key: 'attempts',
       header: t('admin.attempts'),
+      sortable: true,
+      sortType: 'number',
       render: (card) => (
         <span className="text-gray-900 dark:text-white">{card.attempts}</span>
       ),
@@ -103,6 +119,8 @@ export default function StudentDeckDetailPage() {
     {
       key: 'success_rate',
       header: t('admin.successRate'),
+      sortable: true,
+      sortType: 'number',
       render: (card) => {
         if (card.attempts === 0) {
           return <span className="text-gray-400">-</span>
@@ -119,6 +137,8 @@ export default function StudentDeckDetailPage() {
     {
       key: 'last_seen',
       header: t('admin.lastSeen'),
+      sortable: true,
+      sortType: 'date',
       render: (card) => (
         <span className="text-sm text-gray-600 dark:text-gray-400">
           {formatDate(card.last_seen)}
@@ -128,6 +148,8 @@ export default function StudentDeckDetailPage() {
     {
       key: 'next_review',
       header: t('admin.nextReview'),
+      sortable: true,
+      sortType: 'date',
       render: (card) => (
         <span className="text-sm text-gray-600 dark:text-gray-400">
           {formatDate(card.next_review)}
@@ -259,6 +281,12 @@ export default function StudentDeckDetailPage() {
             columns={columns}
             keyExtractor={(card) => card.card_id.toString()}
             emptyMessage={t('admin.noCards')}
+            pagination={{
+              total: deckCards.total_cards,
+              limit: deckCards.limit,
+              offset: deckCards.offset,
+              onPageChange: handlePageChange,
+            }}
           />
         </div>
       </main>

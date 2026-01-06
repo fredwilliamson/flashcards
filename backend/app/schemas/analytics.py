@@ -55,6 +55,10 @@ class UserDeckCardsResponse(BaseModel):
     total_count: int
     avg_success_rate: float
     last_activity: Optional[datetime]
+    # Pagination
+    limit: int
+    offset: int
+    total_cards: int  # Total number of cards (for calculating pages)
 
     class Config:
         from_attributes = True

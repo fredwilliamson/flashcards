@@ -11,6 +11,7 @@ import {
 import {useToast} from '../../contexts/ToastContext';
 import {AxiosError} from 'axios';
 import {t} from './utils';
+import {analyticsKeys} from './analytics.query';
 
 // Query Keys
 export const gameKeys = {
@@ -129,6 +130,8 @@ export const useSubmitAnswer = () => {
         onSuccess: (data, variables) => {
             // Only invalidate stats, not the card (we still need to show feedback)
             queryClient.invalidateQueries({queryKey: gameKeys.sessionStats(variables.sessionId)});
+            // Invalidate analytics to update card mastery status in real-time
+            queryClient.invalidateQueries({queryKey: analyticsKeys.all});
 
             if (data.is_correct) {
                 showToast(t('success.answerCorrect'), 'success');
@@ -157,6 +160,8 @@ export const useCompleteSession = () => {
         onSuccess: (_data, sessionId) => {
             queryClient.invalidateQueries({queryKey: gameKeys.sessions()});
             queryClient.invalidateQueries({queryKey: gameKeys.session(sessionId)});
+            // Invalidate analytics to refresh mastered cards count and progress
+            queryClient.invalidateQueries({queryKey: analyticsKeys.all});
             showToast(t('success.sessionCompleted'), 'success');
         },
         onError: (error) => {

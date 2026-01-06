@@ -6,7 +6,7 @@ from ..user_service import UserService
 from .base_service_impl import BaseServiceImpl
 from ...repositories.user_repository import UserRepository
 from ...models.user import User
-from ...schemas.user import UserCreate, UserReplace, UserPatch, UserResponse
+from ...schemas.user import UserCreate, UserReplace, UserPatch, UserResponse, ChangePasswordRequest
 from ...infra import transactional
 
 # Password hashing context using Argon2 (recommended by OWASP, no 72-byte limit)
@@ -116,4 +116,26 @@ class UserServiceImpl(BaseServiceImpl[User, UserCreate, UserReplace, UserPatch, 
             
         self.db.refresh(updated)
         return self._to_response(updated)
+    
+    @transactional
+    def change_password(self, user_id: int, dto: ChangePasswordRequest) -> bool:
+        """Change user password after verifying current password"""
+        user = self.repository.find_by_id(user_id)
+        if not user:
+            raise ValueError(f"User with id {user_id} not found")
+        
+        # Verify current password
+        if not pwd_context.verify(dto.current_password, user.hashed_password):
+            raise ValueError("Current password is incorrect")
+        
+        # Verify new password is different
+        if pwd_context.verify(dto.new_password, user.hashed_password):
+            raise ValueError("New password must be different from current password")
+        
+        # Hash and update new password
+        user.hashed_password = pwd_context.hash(dto.new_password)
+        self.repository.update(user)
+        self.db.flush()
+        
+        return True
 

@@ -234,6 +234,10 @@ export interface UserDeckCardsResponse {
   total_count: number
   avg_success_rate: number
   last_activity: string | null
+  // Pagination
+  limit: number
+  offset: number
+  total_cards: number
 }
 
 export interface DeckUserProgress {

@@ -204,7 +204,7 @@ class AnalyticsServiceImpl(AnalyticsService):
 
         return dict(attempts_by_deck)
 
-    def get_user_deck_cards(self, user_id: int, deck_id: int) -> Optional[UserDeckCardsResponse]:
+    def get_user_deck_cards(self, user_id: int, deck_id: int, limit: int = 50, offset: int = 0) -> Optional[UserDeckCardsResponse]:
         """Get user progress on individual cards within a deck"""
         user = self.user_repository.find_by_id(user_id)
         deck = self.deck_repository.find_by_id(deck_id)
@@ -224,7 +224,6 @@ class AnalyticsServiceImpl(AnalyticsService):
             card_answers[attempt.card_id].append(attempt)
 
         user_cards = []
-        mastered_count = 0
 
         for card in cards:
             answers = card_answers.get(card.id, [])
@@ -247,9 +246,11 @@ class AnalyticsServiceImpl(AnalyticsService):
                 continue
 
             user_cards.append(
-                self.build_user_deck_card(
-                    answers, card, mastered_count)
+                self.build_user_deck_card(answers, card)
             )
+        
+        # Count mastered cards after building all cards
+        mastered_count = sum(1 for card in user_cards if card.status == "mastered")
 
         # Calculate average success rate
         avg_success_rate = 0.0
@@ -259,27 +260,32 @@ class AnalyticsServiceImpl(AnalyticsService):
         # Get last activity
         last_activity = self.find_last_activity(attempts)
 
+        # Apply pagination to user_cards
+        total_cards = len(user_cards)
+        paginated_cards = user_cards[offset:offset + limit]
+
         return UserDeckCardsResponse(
             user_id=user_id,
             username=user.username,
             deck_id=deck_id,
             deck_name=deck.name,
-            cards=user_cards,
+            cards=paginated_cards,
             mastered_count=mastered_count,
             total_count=len(cards),
             avg_success_rate=round(avg_success_rate, 1),
             last_activity=last_activity,
+            limit=limit,
+            offset=offset,
+            total_cards=total_cards,
         )
 
-    def build_user_deck_card(self, answers, card: Card, mastered_count: int) -> UserDeckCard:
+    def build_user_deck_card(self, answers, card: Card) -> UserDeckCard:
         # Calculate stats
         attempt_count = len(answers)
         success_rate = self.analytics_helper.find_success_rate(answers, attempt_count)
 
         # Determine status
         status = self.analytics_helper.get_card_status(success_rate, attempt_count)
-        if status == CardStatus.MASTERED.value:
-            mastered_count += 1
 
         # Get last seen
         last_seen = max([a.created_at for a in answers])
