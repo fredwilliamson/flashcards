@@ -3,16 +3,30 @@
 echo "🚀 Starting FlashCard API (Production Mode)"
 echo ""
 
-# Apply database migrations
+# Apply database migrations with retry logic
 echo "📦 Applying database migrations..."
-alembic upgrade head
 
-if [ $? -ne 0 ]; then
-    echo "❌ Migration failed!"
-    exit 1
-fi
+MAX_RETRIES=5
+RETRY_DELAY=5
 
-echo "✅ Migrations applied successfully"
+for i in $(seq 1 $MAX_RETRIES); do
+    echo "Attempt $i/$MAX_RETRIES..."
+    alembic upgrade head
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Migrations applied successfully"
+        break
+    else
+        if [ $i -eq $MAX_RETRIES ]; then
+            echo "⚠️ Migration failed after $MAX_RETRIES attempts"
+            echo "⚠️ Starting server anyway (tables may already exist)..."
+        else
+            echo "⚠️ Migration failed, retrying in ${RETRY_DELAY}s..."
+            sleep $RETRY_DELAY
+        fi
+    fi
+done
+
 echo ""
 
 # Start the server

@@ -34,16 +34,17 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . .
 
-# Make start script executable
-RUN chmod +x start-prod.sh
+# Make start scripts executable
+RUN chmod +x start-prod.sh start-no-migrate.sh
 
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+# Health check with longer timeout for database connection
+HEALTHCHECK --interval=30s --timeout=30s --start-period=40s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8000/health', timeout=10)" || exit 1
 
 # Run migrations and start the application
+# Use SKIP_MIGRATIONS=true to skip migrations
 CMD ["./start-prod.sh"]
 
