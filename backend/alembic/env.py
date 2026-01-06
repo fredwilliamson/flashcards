@@ -47,12 +47,11 @@ def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.connect_args"] = {
-        "connect_timeout": 30,  # Increased from 10 to 30 seconds
+        "connect_timeout": 30,
         "keepalives": 1,
         "keepalives_idle": 30,
         "keepalives_interval": 10,
         "keepalives_count": 5,
-        "options": "-c statement_timeout=30000",  # 30 seconds statement timeout
     }
     
     connectable = engine_from_config(
