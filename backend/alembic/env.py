@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+import socket
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -12,6 +13,16 @@ from app.models import base_entity, user, deck, card, progress
 from app.config import get_settings
 
 settings = get_settings()
+
+# Force IPv4 to avoid IPv6 issues on some hosting platforms
+_original_getaddrinfo = socket.getaddrinfo
+
+def _getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+    """Force IPv4 resolution only"""
+    return _original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+socket.getaddrinfo = _getaddrinfo_ipv4_only
+print("✅ [Alembic] Forcing IPv4 connections for Render/Railway compatibility")
 
 # this is the Alembic Config object
 config = context.config
