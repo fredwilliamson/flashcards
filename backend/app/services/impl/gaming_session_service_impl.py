@@ -112,7 +112,6 @@ class GamingSessionServiceImpl(GamingSessionService):
 
         normalized_user = self.normalize(user_answer)
         normalized_choices = [self.normalize(v) for v in valid_answers]
-        print(normalized_choices)
         scorer = fuzz.partial_ratio if use_partial and len(normalized_user) > 2 else fuzz.ratio
 
         match, score = process.extractOne(
@@ -120,8 +119,6 @@ class GamingSessionServiceImpl(GamingSessionService):
             normalized_choices,
             scorer=scorer
         )
-        print(match)
-        print(score)
 
         if not self.is_length_ok(normalized_user, match, max_diff_ratio=max_diff_ratio):
             return False
