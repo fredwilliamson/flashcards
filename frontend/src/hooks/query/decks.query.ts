@@ -31,14 +31,15 @@ export const useDecks = () => {
     const {showToast} = useToast();
 
     const {
-        data = [],
+        data,
         isLoading,
         error,
         refetch,
     } = useQuery<Deck[], AxiosError>({
         queryKey: deckKeys.lists(),
         queryFn: async () => {
-            return await getAllDecks();
+            const response = await getAllDecks(40, 0);
+            return response.items;
         },
     });
 
@@ -50,8 +51,8 @@ export const useDecks = () => {
     }, [error, showToast]);
 
     return {
-        decks: data,
-        hasDecks: !isLoading && data.length > 0,
+        decks: data || [],
+        hasDecks: !isLoading && (data?.length ?? 0) > 0,
         isLoading,
         error,
         refetch,

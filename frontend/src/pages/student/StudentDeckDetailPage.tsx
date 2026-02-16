@@ -1,12 +1,14 @@
-import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Play, BookOpen, Target, TrendingUp, Clock } from 'lucide-react'
-import { useDeck, useUserDeckCards, useStartSession } from '@/hooks/query'
+import { useDeck, useStartSession } from '@/hooks/query'
+import { usePaginatedUserDeckCards } from '../../hooks/usePaginatedUserDeckCards'
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import DataTable, { Column } from '../../components/ui/DataTable'
+import { useDataSort } from '../../hooks/useDataSort'
+
 import ProgressBar from '../../components/ui/ProgressBar'
 import StatsWidget from '../../components/ui/StatsWidget'
 import Loader from '../../components/Loader'
@@ -43,23 +45,20 @@ export default function StudentDeckDetailPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { user } = useAuth()
-  const [offset, setOffset] = useState(0)
-  const limit = 50
 
   const deckIdNum = deckId ? parseInt(deckId) : 0
   const { deck, isLoading: loadingDeck } = useDeck(deckIdNum)
-  const { data: deckCards, isLoading: loadingCards } = useUserDeckCards(
-    user?.id || 0,
-    deckIdNum,
-    limit,
-    offset
-  )
+  const { 
+    cards, 
+    metadata, 
+    isLoading: loadingCards,
+    frontendPageIndex,
+    frontendPageSize,
+    loadMoreIfNeeded,
+    setFrontendPageSize,
+  } = usePaginatedUserDeckCards(user?.id || 0, deckIdNum, 10)
+  const { sortedData: sortedCards, handleSortChange } = useDataSort(cards)
   const startGameMutation = useStartSession()
-
-  const handlePageChange = (newOffset: number) => {
-    setOffset(newOffset)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   const handleStartPractice = () => {
     startGameMutation.mutate(
@@ -168,7 +167,7 @@ export default function StudentDeckDetailPage() {
     )
   }
 
-  if (!deck || !deckCards) {
+  if (!deck || !metadata) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
         <main className="mx-auto max-w-7xl px-4 py-8">
@@ -206,10 +205,10 @@ export default function StudentDeckDetailPage() {
               )}
               <div className="flex gap-4">
                 <Badge variant="info">
-                  {deckCards.total_count} {t('common.cards')}
+                  {metadata.total_count} {t('common.cards')}
                 </Badge>
                 <Badge variant="success">
-                  {deckCards.mastered_count} {t('common.mastered')}
+                  {metadata.mastered_count} {t('common.mastered')}
                 </Badge>
               </div>
             </div>
@@ -217,7 +216,7 @@ export default function StudentDeckDetailPage() {
               variant="primary"
               size="lg"
               onClick={handleStartPractice}
-              disabled={startGameMutation.isPending || deckCards.total_count === 0}
+              disabled={startGameMutation.isPending || metadata.total_count === 0}
             >
               <Play className="h-5 w-5 mr-2" />
               {t('common.practice')}
@@ -229,42 +228,42 @@ export default function StudentDeckDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatsWidget
             title={t('admin.totalCards')}
-            value={deckCards.total_count.toString()}
+            value={metadata.total_count.toString()}
             icon={Target}
             variant="default"
           />
           <StatsWidget
             title={t('admin.masteredCards')}
-            value={deckCards.mastered_count.toString()}
+            value={metadata.mastered_count.toString()}
             icon={TrendingUp}
             variant="success"
           />
           <StatsWidget
             title={t('admin.avgSuccessRate')}
-            value={`${deckCards.avg_success_rate.toFixed(1)}%`}
+            value={`${metadata.avg_success_rate.toFixed(1)}%`}
             icon={TrendingUp}
             variant="warning"
           />
           <StatsWidget
             title={t('admin.lastActivity')}
-            value={deckCards.last_activity ? formatDate(deckCards.last_activity) : t('common.justNow')}
+            value={metadata.last_activity ? formatDate(metadata.last_activity) : t('common.justNow')}
             icon={Clock}
             variant="info"
           />
         </div>
 
         {/* Progress Bar */}
-        {deckCards.total_count > 0 && (
+        {metadata.total_count > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {t('admin.progress')}
             </h3>
             <ProgressBar
-              value={(deckCards.mastered_count / deckCards.total_count) * 100}
+              value={(metadata.mastered_count / metadata.total_count) * 100}
               className="mb-2"
             />
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {deckCards.mastered_count} / {deckCards.total_count} {t('common.cards')} {t('common.mastered')}
+              {metadata.mastered_count} / {metadata.total_count} {t('common.cards')} {t('common.mastered')}
             </p>
           </div>
         )}
@@ -277,15 +276,18 @@ export default function StudentDeckDetailPage() {
             </h3>
           </div>
           <DataTable
-            data={deckCards.cards}
+            data={sortedCards}
             columns={columns}
             keyExtractor={(card) => card.card_id.toString()}
             emptyMessage={t('admin.noCards')}
+            onSortChange={handleSortChange}
             pagination={{
-              total: deckCards.total_cards,
-              limit: deckCards.limit,
-              offset: deckCards.offset,
-              onPageChange: handlePageChange,
+              total: metadata.total_cards,
+              limit: frontendPageSize,
+              offset: frontendPageIndex * frontendPageSize,
+              onPageChange: (newOffset) => loadMoreIfNeeded(Math.floor(newOffset / frontendPageSize)),
+              pageSizeOptions: [5, 10, 20],
+              onPageSizeChange: setFrontendPageSize,
             }}
           />
         </div>

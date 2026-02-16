@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, List, Optional
+from typing import TypeVar, Generic, List, Optional, Tuple
 
 T = TypeVar('T')
 
@@ -55,4 +55,9 @@ class BaseRepository(ABC, Generic[T]):
     @abstractmethod
     def find_by_creator_id(self, creator_id: int) -> List[T]:
         """Find all entities by creator ID"""
+        pass
+
+    @abstractmethod
+    def find_paginated(self, offset: int = 0, limit: int = 20) -> Tuple[List[T], int]:
+        """Find entities with pagination. Returns (items, total_count)."""
         pass

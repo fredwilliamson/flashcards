@@ -1,11 +1,12 @@
-import {useMemo, useState} from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import {useParams} from 'react-router-dom'
 import {useTranslation} from 'react-i18next'
 import {AlertTriangle, Award, CheckCircle, Clock, TrendingUp} from 'lucide-react'
 import Breadcrumb from '../../components/ui/Breadcrumb'
 import StatsWidget from '../../components/ui/StatsWidget'
 import DataTable, {Column} from '../../components/ui/DataTable'
-import Pagination from '../../components/ui/Pagination'
+import { useDataSort } from '../../hooks/useDataSort'
+
 import FilterBar from '../../components/ui/FilterBar'
 import StatusBadge from '../../components/ui/StatusBadge'
 import Loader from '../../components/Loader'
@@ -18,7 +19,7 @@ export default function UserDeckCardsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(50)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   const { data, isLoading } = useUserDeckCards(parseInt(userId!), parseInt(deckId!))
 
@@ -30,12 +31,18 @@ export default function UserDeckCardsPage() {
     })
   }, [data, statusFilter])
 
+  const { sortedData: sortedCards, handleSortChange } = useDataSort(filteredCards)
+
+  // Auto-correct page when filtered data shrinks
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(sortedCards.length / itemsPerPage))
+    if (currentPage > maxPage) setCurrentPage(maxPage)
+  }, [sortedCards.length, itemsPerPage, currentPage])
+
   const paginatedCards = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredCards.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredCards, currentPage, itemsPerPage])
-
-  const totalPages = Math.ceil(filteredCards.length / itemsPerPage)
+    return sortedCards.slice(startIndex, startIndex + itemsPerPage)
+  }, [sortedCards, currentPage, itemsPerPage])
 
   if (isLoading || !data) {
     return <Loader text={t('admin.loadingCards')} />
@@ -210,14 +217,15 @@ export default function UserDeckCardsPage() {
             data={paginatedCards}
             keyExtractor={(card) => card.card_id}
             emptyMessage={t('admin.noCardsFound')}
-          />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredCards.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onSortChange={handleSortChange}
+            pagination={{
+              total: sortedCards.length,
+              limit: itemsPerPage,
+              offset: (currentPage - 1) * itemsPerPage,
+              onPageChange: (newOffset) => setCurrentPage(Math.floor(newOffset / itemsPerPage) + 1),
+              pageSizeOptions: [5, 10, 20],
+              onPageSizeChange: (size) => { setItemsPerPage(size); setCurrentPage(1) },
+            }}
           />
         </div>
 

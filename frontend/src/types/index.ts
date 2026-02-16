@@ -122,6 +122,7 @@ export interface AnswerResponse {
   is_correct: boolean
   expected_keywords: string[]
   message: string
+  expected_answer?: string
   remaining_count: number
   success_count: number
 }
@@ -265,7 +266,7 @@ export interface DeckAnalyticsStats {
 export interface PaginatedResponse<T> {
   items: T[]
   total: number
-  page: number
-  per_page: number
-  total_pages: number
+  limit: number
+  offset: number
+  has_more: boolean
 }

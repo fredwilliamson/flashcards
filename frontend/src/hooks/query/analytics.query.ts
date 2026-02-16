@@ -37,7 +37,7 @@ export const useUserProgress = (userId: number) => {
 /**
  * Get user progress on individual cards within a deck
  */
-export const useUserDeckCards = (userId: number, deckId: number, limit: number = 50, offset: number = 0) => {
+export const useUserDeckCards = (userId: number, deckId: number, limit: number = 40, offset: number = 0) => {
   return useQuery<UserDeckCardsResponse, AxiosError>({
     queryKey: [...analyticsKeys.userDeckCards(userId, deckId), limit, offset],
     queryFn: async () => {

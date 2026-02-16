@@ -1,6 +1,10 @@
 from typing import Optional, List
 import random
+import re
 from sqlalchemy.orm import Session
+from unidecode import unidecode
+from thefuzz import process, fuzz
+
 from ..gaming_session_service import GamingSessionService
 from ...repositories.game_session_repository import GameSessionRepository
 from ...repositories.card_repository import CardRepository
@@ -80,32 +84,78 @@ class GamingSessionServiceImpl(GamingSessionService):
                 validator(session)
         
         return session
-    
-    @staticmethod
-    def _validate_answer(user_answer: str, expected_answer: str, keywords: List[str]) -> bool:
-        """
-        Validate user answer against expected answer and keywords (case-insensitive).
-        
-        Args:
-            user_answer: Answer provided by user
-            expected_answer: The correct answer for the card
-            keywords: List of valid keywords
-            
-        Returns:
-            True if answer matches expected answer OR if any keyword is found in the user answer
-        """
-        normalized_answer = user_answer.lower().strip()
-        
-        if not normalized_answer:
+
+    def normalize(self, text: str) -> str:
+        text = text.lower()
+        text = unidecode(text)  # é → e
+        text = re.sub(r"[\(\)-]", "", text)  #  (), -
+        text = re.sub(r"[^a-z0-9]", "", text)  
+        return text
+
+    def is_length_ok(self, user: str, expected: str, max_diff_ratio: float = 0.2) -> bool:
+        len_user = len(user)
+        len_expected = len(expected)
+        if len_expected == 0:
             return False
-        
-        # Check if answer matches the expected answer (exact match, case-insensitive)
-        if normalized_answer == expected_answer.lower().strip():
+        return abs(len_expected - len_user) / len_expected <= max_diff_ratio
+
+    def check_answer(
+        self,
+        user_answer: str,
+        valid_answers: List[str],
+        threshold: int = 80,
+        max_diff_ratio: float = 0.2,
+        use_partial: bool = True
+    ) -> bool:
+        if not valid_answers:
+            return False
+
+        normalized_user = self.normalize(user_answer)
+        normalized_choices = [self.normalize(v) for v in valid_answers]
+        print(normalized_choices)
+        scorer = fuzz.partial_ratio if use_partial and len(normalized_user) > 2 else fuzz.ratio
+
+        match, score = process.extractOne(
+            normalized_user,
+            normalized_choices,
+            scorer=scorer
+        )
+        print(match)
+        print(score)
+
+        if not self.is_length_ok(normalized_user, match, max_diff_ratio=max_diff_ratio):
+            return False
+
+        return score >= threshold
+
+    def split_answers(self,answers: List[str]) -> List[str]:
+        result = []
+        for a in answers:
+            parts = [part.strip() for part in a.split(",")]
+            result.extend(parts)
+        return result
+
+    def validate_answer(
+            self,
+            user_answer: str,
+            absolute_answers: List[str],
+            keywords: Optional[List[str]] = None,
+            threshold: int = 80,
+            max_diff_ratio: float = 0.2
+    ) -> bool:
+        keywords = keywords or []
+
+        absolute_list = self.split_answers(absolute_answers)
+        keywords_list = self.split_answers(keywords)
+
+        if self.check_answer(user_answer, absolute_list, threshold, max_diff_ratio, use_partial=False):
             return True
-        
-        # Check if any keyword is present in the user answer
-        return any(keyword.lower() in normalized_answer for keyword in keywords)
-    
+
+        if self.check_answer(user_answer, keywords_list, threshold, max_diff_ratio, use_partial=True):
+            return True
+
+        return False
+
     @transactional
     def start_session(self, user_id: int, data: GameSessionStart) -> GameSessionResponse:
         """
@@ -224,10 +274,10 @@ class GamingSessionServiceImpl(GamingSessionService):
         # Verify card belongs to session's deck
         if card.deck_id != session.deck_id:
             raise ValueError("Card does not belong to this session's deck")
-        
+
         # Validate answer (checks expected answer and keywords, case-insensitive)
-        is_correct = self._validate_answer(data.answer, card.answer, card.keywords)
-        
+        is_correct = self.validate_answer(data.answer, [card.answer], card.keywords)
+
         # Record the attempt for analytics
         attempt = CardAttempt(
             session_id=session_id,
@@ -270,8 +320,10 @@ class GamingSessionServiceImpl(GamingSessionService):
         # Prepare response message
         if is_correct:
             message = "Correct answer!"
+            expected_answer = None
         else:
-            message = f"Incorrect. Expected: {card.answer}"
+            message = "Incorrect"
+            expected_answer = card.answer
         
         # Keywords are already a list (JSON column)
         keywords = card.keywords if isinstance(card.keywords, list) else []
@@ -279,11 +331,12 @@ class GamingSessionServiceImpl(GamingSessionService):
         return AnswerResponse(
             is_correct=is_correct,
             message=message,
+            expected_answer=expected_answer,
             expected_keywords=keywords,
             remaining_count=len(remaining_cards),
             success_count=len(success_cards)
         )
-    
+
     def get_session_stats(self, session_id: int, user_id: int) -> SessionStatsResponse:
         """
         Get current session statistics.

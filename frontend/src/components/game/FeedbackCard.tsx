@@ -5,7 +5,7 @@ import { Badge } from '../ui/Badge'
 
 interface FeedbackCardProps {
   isCorrect: boolean
-  message: string
+  expectedAnswer?: string
   expectedKeywords: string[]
   hasMoreCards: boolean
   onNextCard: () => void
@@ -13,12 +13,19 @@ interface FeedbackCardProps {
 
 export default function FeedbackCard({
   isCorrect,
-  message,
+  expectedAnswer,
   expectedKeywords,
   hasMoreCards,
   onNextCard,
 }: FeedbackCardProps) {
   const { t } = useTranslation()
+  
+  // Build the translated message
+  const displayMessage = isCorrect
+    ? t('game.correctAnswer')
+    : expectedAnswer
+    ? t('game.incorrectExpected', { answer: expectedAnswer })
+    : t('game.incorrect')
 
   return (
     <div className="space-y-6">
@@ -51,7 +58,7 @@ export default function FeedbackCard({
               : 'text-red-700 dark:text-red-300'
           }`}
         >
-          {message}
+          {displayMessage}
         </p>
       </div>
 

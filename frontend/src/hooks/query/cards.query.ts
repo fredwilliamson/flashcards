@@ -37,14 +37,15 @@ export const useCards = () => {
     const {showToast} = useToast();
 
     const {
-        data = [],
+        data,
         isLoading,
         error,
         refetch,
     } = useQuery<Card[], AxiosError>({
         queryKey: cardKeys.lists(),
         queryFn: async () => {
-            return await getAllCards();
+            const response = await getAllCards(40, 0);
+            return response.items;
         },
     });
 
@@ -56,8 +57,8 @@ export const useCards = () => {
     }, [error, showToast]);
 
     return {
-        cards: data,
-        hasCards: !isLoading && data.length > 0,
+        cards: data || [],
+        hasCards: !isLoading && (data?.length ?? 0) > 0,
         isLoading,
         error,
         refetch,

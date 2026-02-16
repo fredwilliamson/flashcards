@@ -34,14 +34,15 @@ export const useUsers = () => {
     const {showToast} = useToast();
 
     const {
-        data = [],
+        data,
         isLoading,
         error,
         refetch,
     } = useQuery<User[], AxiosError>({
         queryKey: userKeys.lists(),
         queryFn: async () => {
-            return await getAllUsers();
+            const response = await getAllUsers(40, 0);
+            return response.items;
         },
     });
 
@@ -53,8 +54,8 @@ export const useUsers = () => {
     }, [error, showToast]);
 
     return {
-        users: data,
-        hasUsers: !isLoading && data.length > 0,
+        users: data || [],
+        hasUsers: !isLoading && (data?.length ?? 0) > 0,
         isLoading,
         error,
         refetch,

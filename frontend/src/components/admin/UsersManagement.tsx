@@ -1,13 +1,15 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Users as UsersIcon, UserPlus, Edit, Trash2, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useUsers, useDeleteUser } from '../../hooks/query/users.query'
+import { useDeleteUser } from '../../hooks/query/users.query'
+import { usePaginatedUsers } from '../../hooks/usePaginatedUsers'
 import { useToast } from '../../contexts/ToastContext'
 import { useAuth } from '../../contexts/AuthContext'
 import type { User } from '../../types'
 import DataTable, { Column } from '../ui/DataTable'
-import Pagination from '../ui/Pagination'
+import { useDataSort } from '../../hooks/useDataSort'
+
 import SearchBar from '../ui/SearchBar'
 import FilterBar from '../ui/FilterBar'
 import { Badge } from '../ui/Badge'
@@ -25,21 +27,16 @@ export default function UsersManagement() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [roleFilter, setRoleFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(20)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
-  const { users = [], isLoading } = useUsers()
+  const { allData: allUsers, isLoading } = usePaginatedUsers(40, 10)
   const deleteUserMutation = useDeleteUser()
 
-  // Sort users by username to maintain consistent order
-  const sortedUsers = useMemo(() => {
-    return [...users].sort((a, b) => a.username.localeCompare(b.username))
-  }, [users])
-
-  // Client-side filtering and pagination
+  // Client-side filtering
   const filteredUsers = useMemo(() => {
-    return sortedUsers.filter((user) => {
+    return allUsers.filter((user) => {
       const matchesSearch =
         searchQuery === '' ||
         user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -58,14 +55,20 @@ export default function UsersManagement() {
 
       return matchesSearch && matchesStatus && matchesRole
     })
-  }, [sortedUsers, searchQuery, statusFilter, roleFilter])
+  }, [allUsers, searchQuery, statusFilter, roleFilter])
+
+  const { sortedData: sortedUsers, handleSortChange } = useDataSort(filteredUsers)
+
+  // Auto-correct page when filtered data shrinks
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(sortedUsers.length / itemsPerPage))
+    if (currentPage > maxPage) setCurrentPage(maxPage)
+  }, [sortedUsers.length, itemsPerPage, currentPage])
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredUsers.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredUsers, currentPage, itemsPerPage])
-
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+    return sortedUsers.slice(startIndex, startIndex + itemsPerPage)
+  }, [sortedUsers, currentPage, itemsPerPage])
 
   const handleDelete = async (userId: number) => {
     if (currentUser?.id === userId) {
@@ -86,6 +89,8 @@ export default function UsersManagement() {
     {
       key: 'username',
       header: t('admin.username'),
+      sortable: true,
+      sortType: 'string',
       render: (user) => (
         <div className="font-medium text-gray-900 dark:text-white">
           {user.username}
@@ -95,6 +100,9 @@ export default function UsersManagement() {
     {
       key: 'name',
       header: t('admin.fullName'),
+      sortable: true,
+      sortKey: 'first_name',
+      sortType: 'string',
       render: (user) => (
         <div className="text-gray-900 dark:text-gray-100">
           {user.first_name} {user.last_name}
@@ -122,6 +130,9 @@ export default function UsersManagement() {
     {
       key: 'created',
       header: t('admin.createdAt'),
+      sortable: true,
+      sortKey: 'created_at',
+      sortType: 'date',
       render: (user) => (
         <div className="text-sm text-gray-500 dark:text-gray-400">
           {new Date(user.created_at).toLocaleDateString()}
@@ -228,14 +239,15 @@ export default function UsersManagement() {
           keyExtractor={(user) => user.id}
           isLoading={isLoading}
           emptyMessage={t('admin.noUsersFound')}
-        />
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredUsers.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
+          onSortChange={handleSortChange}
+          pagination={{
+            total: sortedUsers.length,
+            limit: itemsPerPage,
+            offset: (currentPage - 1) * itemsPerPage,
+            onPageChange: (newOffset) => setCurrentPage(Math.floor(newOffset / itemsPerPage) + 1),
+            pageSizeOptions: [5, 10, 20],
+            onPageSizeChange: (size) => { setItemsPerPage(size); setCurrentPage(1) },
+          }}
         />
       </div>
 

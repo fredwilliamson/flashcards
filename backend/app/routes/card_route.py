@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from ..schemas.card import CardResponse, CardPatch, CardReplace, CardCreate
+from ..schemas.pagination import PaginatedResponse
 from ..services.impl import CardServiceImpl
 from ..dependencies import get_card_service
 from ..auth.dependencies import get_current_active_user
@@ -17,11 +18,23 @@ def get_card(card_id: int, service: CardServiceImpl = Depends(get_card_service))
     return card
 
 
-@router.get("", response_model=list[CardResponse])
-@router.get("/", response_model=list[CardResponse])
-def get_cards(service: CardServiceImpl = Depends(get_card_service)):
-    """Get all cards (supports both with and without trailing slash)"""
-    return service.get_all()
+@router.get("", response_model=PaginatedResponse[CardResponse])
+@router.get("/", response_model=PaginatedResponse[CardResponse])
+def get_cards(
+    limit: int = Query(default=40, ge=1, le=10000),
+    offset: int = Query(default=0, ge=0),
+    service: CardServiceImpl = Depends(get_card_service)
+):
+    """Get all cards with pagination (supports both with and without trailing slash)"""
+    cards,total = service.get_all_by_pagination(limit,offset)
+
+    return PaginatedResponse(
+        items=cards,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=(offset + limit) < total
+    )
 
 
 @router.post("", response_model=CardResponse, status_code=201)

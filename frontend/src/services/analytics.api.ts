@@ -18,10 +18,12 @@ export async function getUserProgress(userId: number): Promise<UserProgressStats
  */
 export async function getUserDeckCards(
   userId: number,
-  deckId: number
+  deckId: number,
+  limit: number = 40,
+  offset: number = 0
 ): Promise<UserDeckCardsResponse> {
   const response = await api.get<UserDeckCardsResponse>(
-    `/analytics/users/${userId}/decks/${deckId}/cards`
+    `/analytics/users/${userId}/decks/${deckId}/cards?limit=${limit}&offset=${offset}`
   )
   return response.data
 }

@@ -28,7 +28,7 @@ export default function GamePage() {
   const [showExitDialog, setShowExitDialog] = useState(false)
   const [lastFeedback, setLastFeedback] = useState<{
     isCorrect: boolean
-    message: string
+    expectedAnswer?: string
     expectedKeywords: string[]
   } | null>(null)
 
@@ -60,11 +60,11 @@ export default function GamePage() {
         onSuccess: (response) => {
           setLastFeedback({
             isCorrect: response.is_correct,
-            message: response.message,
+            expectedAnswer: response.expected_answer,
             expectedKeywords: response.expected_keywords,
           })
           setGameState('feedback')
-          refetchStats()
+          // Stats are automatically refetched via query invalidation in useSubmitAnswer
         },
       }
     )
@@ -174,7 +174,7 @@ export default function GamePage() {
           {gameState === 'feedback' && lastFeedback && (
             <FeedbackCard
               isCorrect={lastFeedback.isCorrect}
-              message={lastFeedback.message}
+              expectedAnswer={lastFeedback.expectedAnswer}
               expectedKeywords={lastFeedback.expectedKeywords}
               hasMoreCards={stats ? stats.remaining_count > 0 : false}
               onNextCard={handleNextCard}

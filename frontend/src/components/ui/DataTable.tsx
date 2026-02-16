@@ -1,6 +1,5 @@
 import { ReactNode, useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react'
-import { Button } from './Button'
 
 export interface Column<T> {
   key: string
@@ -11,11 +10,20 @@ export interface Column<T> {
   sortType?: 'string' | 'number' | 'date' // Type of data for smart sorting
 }
 
+export interface SortConfig {
+  key: string
+  sortKey?: string
+  sortType?: 'string' | 'number' | 'date'
+  direction: 'asc' | 'desc'
+}
+
 export interface PaginationInfo {
   total: number
   limit: number
   offset: number
   onPageChange: (offset: number) => void
+  pageSizeOptions?: number[]
+  onPageSizeChange?: (size: number) => void
 }
 
 interface DataTableProps<T> {
@@ -25,6 +33,7 @@ interface DataTableProps<T> {
   emptyMessage?: string
   isLoading?: boolean
   pagination?: PaginationInfo
+  onSortChange?: (sort: SortConfig | null) => void
 }
 
 export default function DataTable<T>({
@@ -34,11 +43,9 @@ export default function DataTable<T>({
   emptyMessage = 'No data available',
   isLoading = false,
   pagination,
+  onSortChange,
 }: DataTableProps<T>) {
-  const [sortConfig, setSortConfig] = useState<{
-    key: string
-    direction: 'asc' | 'desc'
-  } | null>(null)
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null)
 
   // Smart sorting function
   const getSortValue = (item: any, column: Column<T>) => {
@@ -62,7 +69,9 @@ export default function DataTable<T>({
     return String(value).toLowerCase()
   }
 
+  // When paginated with onSortChange, skip internal sorting (consumer handles it)
   const sortedData = useMemo(() => {
+    if (pagination && onSortChange) return data
     if (!sortConfig) return data
 
     const sorted = [...data].sort((a, b) => {
@@ -82,17 +91,28 @@ export default function DataTable<T>({
     })
 
     return sorted
-  }, [data, sortConfig, columns])
+  }, [data, sortConfig, columns, pagination, onSortChange])
 
   const handleSort = (columnKey: string) => {
+    const column = columns.find((col) => col.key === columnKey)
+    if (!column) return
+
     setSortConfig((current) => {
+      let next: SortConfig | null
       if (!current || current.key !== columnKey) {
-        return { key: columnKey, direction: 'asc' }
+        next = { key: columnKey, sortKey: column.sortKey, sortType: column.sortType, direction: 'asc' }
+      } else if (current.direction === 'asc') {
+        next = { key: columnKey, sortKey: column.sortKey, sortType: column.sortType, direction: 'desc' }
+      } else {
+        next = null // Remove sort
       }
-      if (current.direction === 'asc') {
-        return { key: columnKey, direction: 'desc' }
+
+      // Notify consumer for paginated sorting
+      if (onSortChange) {
+        onSortChange(next)
       }
-      return null // Remove sort
+
+      return next
     })
   }
 
@@ -104,18 +124,18 @@ export default function DataTable<T>({
     )
   }
 
-  if (data.length === 0) {
+  const currentPage = pagination ? Math.floor(pagination.offset / pagination.limit) + 1 : 1
+  const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 1
+  const hasNextPage = pagination ? pagination.offset + pagination.limit < pagination.total : false
+  const hasPrevPage = pagination ? pagination.offset > 0 : false
+
+  if (data.length === 0 && !pagination) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400">
         {emptyMessage}
       </div>
     )
   }
-
-  const currentPage = pagination ? Math.floor(pagination.offset / pagination.limit) + 1 : 1
-  const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 1
-  const hasNextPage = pagination ? pagination.offset + pagination.limit < pagination.total : false
-  const hasPrevPage = pagination ? pagination.offset > 0 : false
 
   return (
     <div>
@@ -153,55 +173,81 @@ export default function DataTable<T>({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {sortedData.map((item) => (
-              <tr
-                key={keyExtractor(item)}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
-                  >
-                    {column.render(item)}
-                  </td>
-                ))}
+            {sortedData.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  {emptyMessage}
+                </td>
               </tr>
-            ))}
+            ) : (
+              sortedData.map((item) => (
+                <tr
+                  key={keyExtractor(item)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
+                    >
+                      {column.render(item)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination Controls */}
-      {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-sm text-gray-700 dark:text-gray-300">
-            Page {currentPage} sur {totalPages} ({pagination.total} total)
+      {pagination && pagination.total > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-4">
+            {pagination.onPageSizeChange && pagination.pageSizeOptions && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700 dark:text-gray-300">Rows per page:</span>
+                <select
+                  value={pagination.limit}
+                  onChange={(e) => pagination.onPageSizeChange!(Number(e.target.value))}
+                  className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  {pagination.pageSizeOptions.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {pagination.offset + 1}-{Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total}
+            </span>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
+
+          <div className="flex items-center gap-2">
+            <button
               onClick={() => pagination.onPageChange(pagination.offset - pagination.limit)}
               disabled={!hasPrevPage}
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Précédent
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Page {currentPage} of {totalPages || 1}
+            </span>
+
+            <button
               onClick={() => pagination.onPageChange(pagination.offset + pagination.limit)}
               disabled={!hasNextPage}
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              Suivant
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
     </div>
   )
 }
-
-

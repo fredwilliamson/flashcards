@@ -37,6 +37,7 @@ class AnswerResponse(BaseModel):
     """Schema for answer validation response"""
     is_correct: bool
     message: str
+    expected_answer: Optional[str] = None
     expected_keywords: list[str]
     remaining_count: int
     success_count: int

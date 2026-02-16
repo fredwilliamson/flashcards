@@ -34,7 +34,7 @@ def get_user_progress(
 def get_user_deck_cards(
     user_id: int,
     deck_id: int,
-    limit: int = 50,
+    limit: int = 40,
     offset: int = 0,
     current_user: User = Depends(get_current_active_user),
     service: AnalyticsServiceImpl = Depends(get_analytics_service),

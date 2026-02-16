@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, List, Optional, Type
+from typing import TypeVar, Generic, List, Optional, Type, Tuple
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from ...repositories.base_repository import BaseRepository
@@ -106,6 +106,10 @@ class BaseServiceImpl(Generic[T, C, U, P, R]):
     def _to_response(self, entity: T) -> R:
         """Convert SQLAlchemy model to Pydantic response DTO"""
         return self.response_class.model_validate(entity)
+
+    def get_all_by_pagination(self,limit:int,offset:int) -> Tuple[List[T], int]:
+        items, total = self.repository.find_paginated(offset, limit)
+        return items, total
 
 
 

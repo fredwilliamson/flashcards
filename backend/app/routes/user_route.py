@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from ..schemas.user import UserResponse, UserPatch, UserReplace, UserCreate, ChangePasswordRequest, ChangePasswordResponse
+from ..schemas.pagination import PaginatedResponse
 from ..services.impl import UserServiceImpl
 from ..dependencies import get_user_service
 from ..auth.dependencies import get_current_active_user
@@ -17,10 +18,24 @@ def get_user(user_id: int, service: UserServiceImpl = Depends(get_user_service))
     return user
 
 
-@router.get("/", response_model=list[UserResponse])
-def get_users(service: UserServiceImpl = Depends(get_user_service)):
-    """Get all users"""
-    return service.get_all()
+@router.get("/", response_model=PaginatedResponse[UserResponse])
+def get_users(
+    limit: int = Query(default=40, ge=1, le=10000),
+    offset: int = Query(default=0, ge=0),
+    service: UserServiceImpl = Depends(get_user_service)
+):
+    """Get all users with pagination"""
+    users = service.get_all()
+    total = len(users)
+    paginated_users = users[offset:offset + limit]
+    
+    return PaginatedResponse(
+        items=paginated_users,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=(offset + limit) < total
+    )
 
 
 @router.post("/", response_model=UserResponse, status_code=201)

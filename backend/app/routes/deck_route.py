@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Query
 from ..schemas.deck import DeckResponse, DeckCreate, DeckPatch, DeckReplace
 from ..schemas.csv_import import CSVImportResponse
+from ..schemas.pagination import PaginatedResponse
 from ..services.impl import DeckServiceImpl, CardServiceImpl
 from ..dependencies import get_deck_service, get_card_service
 from ..auth.dependencies import get_current_active_user
@@ -10,11 +11,25 @@ from ..services.csv_import_service import CSVImportService
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
-@router.get("", response_model=list[DeckResponse])
-@router.get("/", response_model=list[DeckResponse])
-def get_decks(service: DeckServiceImpl = Depends(get_deck_service)):
-    """Get all decks (supports both with and without trailing slash)"""
-    return service.get_all()
+@router.get("", response_model=PaginatedResponse[DeckResponse])
+@router.get("/", response_model=PaginatedResponse[DeckResponse])
+def get_decks(
+    limit: int = Query(default=40, ge=1, le=10000),
+    offset: int = Query(default=0, ge=0),
+    service: DeckServiceImpl = Depends(get_deck_service)
+):
+    """Get all decks with pagination (supports both with and without trailing slash)"""
+    decks = service.get_all()
+    total = len(decks)
+    paginated_decks = decks[offset:offset + limit]
+    
+    return PaginatedResponse(
+        items=paginated_decks,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=(offset + limit) < total
+    )
 
 
 @router.get("/{deck_id}", response_model=DeckResponse)

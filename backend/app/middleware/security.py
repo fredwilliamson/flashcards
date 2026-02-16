@@ -31,7 +31,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         
         # Content Security Policy
-        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        # More permissive CSP for Swagger docs to allow CDN resources
+        if request.url.path.startswith("/docs") or request.url.path.startswith("/redoc"):
+            # Allow Swagger UI resources from CDNs
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "img-src 'self' data: https://fastapi.tiangolo.com https://cdn.jsdelivr.net; "
+                "font-src 'self' https://cdn.jsdelivr.net; "
+                "connect-src 'self'"
+            )
+        else:
+            # Strict CSP for API endpoints
+            csp = "default-src 'self'"
+        
+        response.headers["Content-Security-Policy"] = csp
         
         # HSTS (only in production with HTTPS)
         if request.url.scheme == "https":

@@ -1,13 +1,15 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Users as UsersIcon, TrendingUp, Target, AlertCircle, ChevronRight } from 'lucide-react'
 import Breadcrumb from '../../components/ui/Breadcrumb'
 import StatsWidget from '../../components/ui/StatsWidget'
 import DataTable, { Column } from '../../components/ui/DataTable'
+import { useDataSort } from '../../hooks/useDataSort'
 import ProgressBar from '../../components/ui/ProgressBar'
 import { Button } from '../../components/ui/Button'
 import Loader from '../../components/Loader'
+
 import { useDeckAnalytics } from '../../hooks/query/analytics.query'
 import type { DeckUserProgress, CardDifficulty } from '../../types'
 
@@ -15,16 +17,33 @@ export default function DeckAnalyticsPage() {
   const { deckId } = useParams<{ deckId: string }>()
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [usersProgressPage, setUsersProgressPage] = useState(1)
+  const [usersProgressPageSize, setUsersProgressPageSize] = useState(10)
   const [difficultCardsOffset, setDifficultCardsOffset] = useState(0)
   const difficultCardsLimit = 10
 
   const { data: deckAnalytics, isLoading } = useDeckAnalytics(parseInt(deckId!))
 
+  // Sort full datasets before pagination
+  const { sortedData: sortedUsersProgress, handleSortChange: handleUsersSortChange } = useDataSort(deckAnalytics?.users_progress ?? [])
+  const { sortedData: sortedDifficultCards, handleSortChange: handleDifficultSortChange } = useDataSort(deckAnalytics?.difficult_cards ?? [])
+
+  // Auto-correct page when data shrinks
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(sortedUsersProgress.length / usersProgressPageSize))
+    if (usersProgressPage > maxPage) setUsersProgressPage(maxPage)
+  }, [sortedUsersProgress.length, usersProgressPageSize, usersProgressPage])
+
+  // Paginate users progress
+  const paginatedUsersProgress = useMemo(() => {
+    const startIndex = (usersProgressPage - 1) * usersProgressPageSize
+    return sortedUsersProgress.slice(startIndex, startIndex + usersProgressPageSize)
+  }, [sortedUsersProgress, usersProgressPage, usersProgressPageSize])
+
   // Paginate difficult cards
   const paginatedDifficultCards = useMemo(() => {
-    if (!deckAnalytics) return []
-    return deckAnalytics.difficult_cards.slice(difficultCardsOffset, difficultCardsOffset + difficultCardsLimit)
-  }, [deckAnalytics, difficultCardsOffset])
+    return sortedDifficultCards.slice(difficultCardsOffset, difficultCardsOffset + difficultCardsLimit)
+  }, [sortedDifficultCards, difficultCardsOffset])
 
   if (isLoading || !deckAnalytics) {
     return <Loader text={t('admin.loadingDeckAnalytics')} />
@@ -271,9 +290,18 @@ export default function DeckAnalyticsPage() {
           </div>
           <DataTable
             columns={userColumns}
-            data={deckAnalytics.users_progress}
+            data={paginatedUsersProgress}
             keyExtractor={(user) => user.user_id}
             emptyMessage={t('admin.noUsersProgress')}
+            onSortChange={handleUsersSortChange}
+            pagination={{
+              total: sortedUsersProgress.length,
+              limit: usersProgressPageSize,
+              offset: (usersProgressPage - 1) * usersProgressPageSize,
+              onPageChange: (newOffset) => setUsersProgressPage(Math.floor(newOffset / usersProgressPageSize) + 1),
+              pageSizeOptions: [5, 10, 20],
+              onPageSizeChange: (size) => { setUsersProgressPageSize(size); setUsersProgressPage(1) },
+            }}
           />
         </div>
 
@@ -293,8 +321,9 @@ export default function DeckAnalyticsPage() {
               data={paginatedDifficultCards}
               keyExtractor={(card) => card.card_id}
               emptyMessage={t('admin.noDifficultCards')}
+              onSortChange={handleDifficultSortChange}
               pagination={{
-                total: deckAnalytics.difficult_cards.length,
+                total: sortedDifficultCards.length,
                 limit: difficultCardsLimit,
                 offset: difficultCardsOffset,
                 onPageChange: setDifficultCardsOffset,

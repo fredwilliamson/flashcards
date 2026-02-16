@@ -1,8 +1,8 @@
-import type { User, UserCreate, UserPatch } from '../types'
+import type { User, UserCreate, UserPatch, PaginatedResponse } from '../types'
 import api from './api'
 
-export const getAllUsers = async (): Promise<User[]> => {
-  const res = await api.get<User[]>('/admin/users')
+export const getAllUsers = async (limit: number = 40, offset: number = 0): Promise<PaginatedResponse<User>> => {
+  const res = await api.get<PaginatedResponse<User>>(`/admin/users?limit=${limit}&offset=${offset}`)
   return res.data
 }
 

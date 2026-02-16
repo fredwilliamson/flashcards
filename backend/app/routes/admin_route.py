@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List
 from ..schemas.user import UserResponse, UserCreate
 from ..schemas.admin import (
@@ -8,6 +8,7 @@ from ..schemas.admin import (
     SessionListItem,
     CardDifficultyResponse
 )
+from ..schemas.pagination import PaginatedResponse
 from ..services.impl import UserServiceImpl, AdminServiceImpl
 from ..dependencies import get_user_service, get_admin_service
 from ..auth.dependencies import get_current_admin_user
@@ -29,17 +30,29 @@ def get_global_stats(
     return service.get_global_stats()
 
 
-@router.get("/users", response_model=List[UserResponse])
+@router.get("/users", response_model=PaginatedResponse[UserResponse])
 def list_all_users(
+    limit: int = Query(default=40, ge=1, le=10000),
+    offset: int = Query(default=0, ge=0),
     service: UserServiceImpl = Depends(get_user_service),
     current_admin: User = Depends(get_current_admin_user)
 ):
     """
-    List all users (admin only).
+    List all users (admin only) with pagination.
     
-    Returns all users including inactive ones.
+    Returns paginated users including inactive ones. Default limit is 40.
     """
-    return service.get_all()
+    users = service.get_all()
+    total = len(users)
+    paginated_users = users[offset:offset + limit]
+    
+    return PaginatedResponse(
+        items=paginated_users,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=(offset + limit) < total
+    )
 
 
 @router.post("/users", response_model=UserResponse, status_code=201)

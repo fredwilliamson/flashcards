@@ -1,15 +1,14 @@
-import {useMemo} from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {BookOpen, Eye, Play} from 'lucide-react'
 import {useNavigate} from 'react-router-dom'
-import {useDecks} from '@/hooks/query'
 import {useStartSession} from '@/hooks/query'
 import {useAuth} from '../../contexts/AuthContext'
 import {useUserProgress} from '@/hooks/query'
-import {usePaginatedSearch} from '../../hooks/usePaginatedSearch'
+import {usePaginatedDecks} from '../../hooks/usePaginatedDecks'
 import type {Deck} from '@/types'
 import DataTable, {Column} from '../ui/DataTable'
-import Pagination from '../ui/Pagination'
+
 import SearchBar from '../ui/SearchBar'
 import {Badge} from '../ui/Badge'
 import {Button} from '../ui/Button'
@@ -21,31 +20,41 @@ export default function MyDecksManagement() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const { decks = [], isLoading: loadingDecks } = useDecks()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  const { allData: allDecks, isLoading: loadingDecks } = usePaginatedDecks(40, 10)
   const { data: userProgress, isLoading: loadingProgress } = useUserProgress(user?.id || 0)
   const startGameMutation = useStartSession()
 
-  // Filter only public decks
-  const publicDecks = useMemo(() => {
-    return decks.filter(deck => deck.is_public)
-  }, [decks])
+  // Filter only public decks, search, and sort
+  const filteredDecks = useMemo(() => {
+    const publicDecks = allDecks.filter(deck => deck.is_public)
+    const sorted = publicDecks.sort((a, b) => a.name.localeCompare(b.name))
+    
+    if (!searchQuery) return sorted
+    
+    const search = searchQuery.toLowerCase()
+    return sorted.filter(deck => 
+      deck.name.toLowerCase().includes(search) ||
+      deck.description.toLowerCase().includes(search)
+    )
+  }, [allDecks, searchQuery])
 
-  // Use paginated search hook
-  const {
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
-    paginatedItems: paginatedDecks,
-    totalPages,
-    totalItems,
-  } = usePaginatedSearch({
-    items: publicDecks,
-    searchFields: (deck) => [deck.name, deck.description],
-    initialItemsPerPage: 10,
-    sortFn: (a, b) => a.name.localeCompare(b.name),
-  })
+  // Auto-correct page when filtered data shrinks
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredDecks.length / itemsPerPage))
+    if (currentPage > maxPage) setCurrentPage(maxPage)
+  }, [filteredDecks.length, itemsPerPage, currentPage])
+
+  // Paginate
+  const paginatedDecks = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredDecks.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredDecks, currentPage, itemsPerPage])
+
+  const totalItems = filteredDecks.length
 
   // Get progress for a specific deck
   const getDeckProgress = (deckId: number) => {
@@ -185,18 +194,15 @@ export default function MyDecksManagement() {
         columns={columns}
         keyExtractor={(deck) => deck.id.toString()}
         emptyMessage={t('admin.noDecksFound')}
+        pagination={{
+          total: totalItems,
+          limit: itemsPerPage,
+          offset: (currentPage - 1) * itemsPerPage,
+          onPageChange: (newOffset) => setCurrentPage(Math.floor(newOffset / itemsPerPage) + 1),
+          pageSizeOptions: [5, 10, 20],
+          onPageSizeChange: (size) => { setItemsPerPage(size); setCurrentPage(1) },
+        }}
       />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-        />
-      )}
     </div>
   )
 }

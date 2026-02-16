@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, Plus, Edit, Trash2, Eye, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useDecks, useDeleteDeck } from '../../hooks/query/decks.query'
-import { usePaginatedSearch } from '../../hooks/usePaginatedSearch'
+import { useDeleteDeck } from '../../hooks/query/decks.query'
+import { usePaginatedDecks } from '../../hooks/usePaginatedDecks'
 import type { Deck } from '../../types'
 import DataTable, { Column } from '../ui/DataTable'
-import Pagination from '../ui/Pagination'
+
 import SearchBar from '../ui/SearchBar'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -17,28 +17,40 @@ export default function DecksManagement() {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
-  const { decks = [], isLoading } = useDecks()
+  const { allData: allDecks, isLoading } = usePaginatedDecks(40, 10)
   const deleteDeckMutation = useDeleteDeck()
 
-  // Use paginated search hook
-  const {
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
-    setItemsPerPage,
-    paginatedItems: paginatedDecks,
-    totalPages,
-    totalItems,
-  } = usePaginatedSearch({
-    items: decks,
-    searchFields: (deck) => [deck.name, deck.description],
-    initialItemsPerPage: 20,
-    sortFn: (a, b) => a.name.localeCompare(b.name),
-  })
+  // Client-side filtering and pagination
+  const filteredDecks = useMemo(() => {
+    const sorted = [...allDecks].sort((a, b) => a.name.localeCompare(b.name))
+    return sorted.filter((deck) => {
+      if (!searchQuery) return true
+      const search = searchQuery.toLowerCase()
+      return (
+        deck.name.toLowerCase().includes(search) ||
+        deck.description.toLowerCase().includes(search)
+      )
+    })
+  }, [allDecks, searchQuery])
+
+  // Auto-correct page when filtered data shrinks
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredDecks.length / itemsPerPage))
+    if (currentPage > maxPage) setCurrentPage(maxPage)
+  }, [filteredDecks.length, itemsPerPage, currentPage])
+
+  const paginatedDecks = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredDecks.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredDecks, currentPage, itemsPerPage])
+
+  const totalItems = filteredDecks.length
 
   const handleDelete = async (deckId: number) => {
     if (confirm(t('admin.confirmDeleteDeck'))) {
@@ -166,14 +178,14 @@ export default function DecksManagement() {
           keyExtractor={(deck) => deck.id}
           isLoading={isLoading}
           emptyMessage={t('admin.noDecksFound')}
-        />
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
+          pagination={{
+            total: totalItems,
+            limit: itemsPerPage,
+            offset: (currentPage - 1) * itemsPerPage,
+            onPageChange: (newOffset) => setCurrentPage(Math.floor(newOffset / itemsPerPage) + 1),
+            pageSizeOptions: [5, 10, 20],
+            onPageSizeChange: (size) => { setItemsPerPage(size); setCurrentPage(1) },
+          }}
         />
       </div>
 

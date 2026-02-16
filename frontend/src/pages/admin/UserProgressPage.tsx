@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, Award, Target, Flame, AlertTriangle, ChevronRight } from 'lucide-react'
 import Breadcrumb from '../../components/ui/Breadcrumb'
@@ -7,15 +8,53 @@ import DataTable, { Column } from '../../components/ui/DataTable'
 import ProgressBar from '../../components/ui/ProgressBar'
 import { Button } from '../../components/ui/Button'
 import Loader from '../../components/Loader'
+
 import { useUserProgress } from '../../hooks/query/analytics.query'
 import type { UserDeckProgress } from '../../types'
 
 export default function UserProgressPage() {
-  const { userId } = useParams<{ userId: string }>()
+  const { userId: userIdParam } = useParams<{ userId: string }>()
   const { t } = useTranslation()
   const navigate = useNavigate()
 
-  const { data: userProgress, isLoading } = useUserProgress(parseInt(userId!))
+  const userId = userIdParam != null ? parseInt(userIdParam, 10) : NaN
+  const isValidUserId = !Number.isNaN(userId) && userId > 0
+
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  const { data: userProgress, isLoading } = useUserProgress(isValidUserId ? userId : 0)
+
+  const sortedDecks = useMemo(() => {
+    if (!userProgress?.decks_progress) return []
+    return [...userProgress.decks_progress].sort((a, b) =>
+      b.progress_percentage - a.progress_percentage
+    )
+  }, [userProgress?.decks_progress])
+
+  // Auto-correct page when data shrinks
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(sortedDecks.length / itemsPerPage))
+    if (currentPage > maxPage) setCurrentPage(maxPage)
+  }, [sortedDecks.length, itemsPerPage, currentPage])
+
+  const paginatedDecks = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return sortedDecks.slice(startIndex, startIndex + itemsPerPage)
+  }, [sortedDecks, currentPage, itemsPerPage])
+
+  if (!isValidUserId) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-gray-600 dark:text-gray-400">{t('admin.userNotFound')}</p>
+          <Button variant="secondary" onClick={() => navigate('/admin?tab=users')}>
+            {t('common.back')}
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading || !userProgress) {
     return <Loader text={t('admin.loadingUserProgress')} />
@@ -90,7 +129,7 @@ export default function UserProgressPage() {
               : 'text-red-600 dark:text-red-400'
           }`}
         >
-          {deck.success_rate}%
+          {deck.success_rate.toFixed(1)}%
         </div>
       ),
     },
@@ -186,9 +225,17 @@ export default function UserProgressPage() {
           </div>
           <DataTable
             columns={columns}
-            data={userProgress.decks_progress}
-            keyExtractor={(deck) => deck.deck_id}
+            data={paginatedDecks}
+            keyExtractor={(deck) => deck.deck_id.toString()}
             emptyMessage={t('admin.noDecksProgress')}
+            pagination={{
+              total: sortedDecks.length,
+              limit: itemsPerPage,
+              offset: (currentPage - 1) * itemsPerPage,
+              onPageChange: (newOffset) => setCurrentPage(Math.floor(newOffset / itemsPerPage) + 1),
+              pageSizeOptions: [5, 10, 20],
+              onPageSizeChange: (size) => { setItemsPerPage(size); setCurrentPage(1) },
+            }}
           />
         </div>
 
@@ -207,7 +254,7 @@ export default function UserProgressPage() {
                   key={deck.deck_id}
                   className="text-sm text-yellow-800 dark:text-yellow-200"
                 >
-                  <strong>{deck.deck_name}</strong>: {deck.success_rate}% success rate (
+                  <strong>{deck.deck_name}</strong>: {deck.success_rate.toFixed(1)}% success rate (
                   {deck.mastered_cards}/{deck.total_cards} mastered)
                 </li>
               ))}

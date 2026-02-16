@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, Target, Award, Zap, AlertCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -10,6 +10,7 @@ import ProgressBar from '../ui/ProgressBar'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import Loader from '../Loader'
+
 import type { UserDeckProgress } from '../../types'
 
 export default function MyProgressManagement() {
@@ -17,14 +18,28 @@ export default function MyProgressManagement() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
   const { data: userProgress, isLoading } = useUserProgress(user?.id || 0)
 
   const sortedDecks = useMemo(() => {
     if (!userProgress?.decks_progress) return []
-    return [...userProgress.decks_progress].sort((a, b) => 
+    return [...userProgress.decks_progress].sort((a, b) =>
       b.progress_percentage - a.progress_percentage
     )
   }, [userProgress?.decks_progress])
+
+  // Auto-correct page when data shrinks
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(sortedDecks.length / itemsPerPage))
+    if (currentPage > maxPage) setCurrentPage(maxPage)
+  }, [sortedDecks.length, itemsPerPage, currentPage])
+
+  const paginatedDecks = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return sortedDecks.slice(startIndex, startIndex + itemsPerPage)
+  }, [sortedDecks, currentPage, itemsPerPage])
 
   const handleViewDeck = (deckId: number) => {
     navigate(`/student/decks/${deckId}`)
@@ -187,12 +202,22 @@ export default function MyProgressManagement() {
             </p>
           </div>
         ) : (
-          <DataTable
-            data={sortedDecks}
-            columns={columns}
-            keyExtractor={(deck) => deck.deck_id.toString()}
-            emptyMessage={t('student.noProgressYet')}
-          />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <DataTable
+              data={paginatedDecks}
+              columns={columns}
+              keyExtractor={(deck) => deck.deck_id.toString()}
+              emptyMessage={t('student.noProgressYet')}
+              pagination={{
+                total: sortedDecks.length,
+                limit: itemsPerPage,
+                offset: (currentPage - 1) * itemsPerPage,
+                onPageChange: (newOffset) => setCurrentPage(Math.floor(newOffset / itemsPerPage) + 1),
+                pageSizeOptions: [5, 10, 20],
+                onPageSizeChange: (size) => { setItemsPerPage(size); setCurrentPage(1) },
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

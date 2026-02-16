@@ -1,7 +1,7 @@
-from typing import TypeVar, Generic, List, Optional, Type
+from typing import TypeVar, Generic, List, Optional, Tuple, Type
 from sqlalchemy.orm import Session
 from ...models.base_entity import BaseEntity
-
+from sqlalchemy import func, asc, desc
 T = TypeVar('T', bound=BaseEntity)
 
 
@@ -68,4 +68,23 @@ class BaseRepositoryImpl(Generic[T]):
     def find_by_creator_id(self, creator_id: int) -> List[T]:
         """Find all entities by creator ID"""
         return self.db.query(self.model).filter(self.model.creator_id == creator_id).all()
+
+    def find_paginated(
+            self,
+            offset: int = 0,
+            limit: int = 20,
+            order_by: Optional[str] = 'id',
+            order_direction: str = 'asc'
+    ) -> Tuple[List[T], int]:
+        query = self.db.query(self.model)
+
+        if order_by and hasattr(self.model, order_by):
+            column = getattr(self.model, order_by)
+            order_func = asc if order_direction == "asc" else desc
+            query = query.order_by(order_func(column))
+
+        total = query.order_by(None).count()
+
+        items = query.offset(offset).limit(limit).all()
+        return items, total
 

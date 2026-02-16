@@ -1,8 +1,8 @@
-import type {CSVImportResponse, Deck, DeckCreate, DeckPatch} from '@/types'
+import type {CSVImportResponse, Deck, DeckCreate, DeckPatch, PaginatedResponse} from '@/types'
 import api from './api'
 
-export const getAllDecks = async (): Promise<Deck[]> => {
-  const res = await api.get<Deck[]>('/decks')
+export const getAllDecks = async (limit: number = 40, offset: number = 0): Promise<PaginatedResponse<Deck>> => {
+  const res = await api.get<PaginatedResponse<Deck>>(`/decks?limit=${limit}&offset=${offset}`)
   return res.data
 }
 

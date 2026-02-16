@@ -1,8 +1,8 @@
-import type { Card, CardCreate, CardPatch, CSVImportResponse } from '../types'
+import type { Card, CardCreate, CardPatch, CSVImportResponse, PaginatedResponse } from '../types'
 import api from './api'
 
-export const getAllCards = async (): Promise<Card[]> => {
-  const res = await api.get<Card[]>('/cards')
+export const getAllCards = async (limit: number = 40, offset: number = 0): Promise<PaginatedResponse<Card>> => {
+  const res = await api.get<PaginatedResponse<Card>>(`/cards?limit=${limit}&offset=${offset}`)
   return res.data
 }
 
