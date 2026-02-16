@@ -1,15 +1,10 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
-import {
-  useNextCard,
-  useSubmitAnswer,
-  useSessionStats,
-  useCompleteSession,
-} from '@/hooks/query'
-import { Button } from '../../components/ui/Button'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import {useEffect, useState} from 'react'
+import {useNavigate, useParams} from 'react-router-dom'
+import {useTranslation} from 'react-i18next'
+import {X} from 'lucide-react'
+import {useCompleteSession, useNextCard, useSessionStats, useSubmitAnswer,} from '@/hooks/query'
+import {Button} from '../../components/ui/Button'
+import {ConfirmDialog} from '../../components/ui/ConfirmDialog'
 import Breadcrumb from '../../components/ui/Breadcrumb'
 import FeedbackCard from '../../components/game/FeedbackCard'
 import QuestionCard from '../../components/game/QuestionCard'
@@ -34,7 +29,7 @@ export default function GamePage() {
 
   const sessionIdNum = sessionId ? parseInt(sessionId) : null
   const { card, isLoading: loadingCard, refetch: refetchCard } = useNextCard(sessionIdNum)
-  const { stats, refetch: refetchStats } = useSessionStats(sessionIdNum)
+  const { stats } = useSessionStats(sessionIdNum)
   const submitAnswerMutation = useSubmitAnswer()
   const completeSessionMutation = useCompleteSession()
 
